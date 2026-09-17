@@ -69,7 +69,7 @@ export function MessageParticle({
       }}
       className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
-      <title>Message {message.id} travelling from {message.source.chainId} to {message.destination.chainId}</title>
+      <title>{`Message ${message.id} travelling from ${message.source.chainId} to ${message.destination.chainId}`}</title>
     </motion.circle>
   )
 }

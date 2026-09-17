@@ -40,7 +40,7 @@ export function ChainNode({
         }
       }}
     >
-      <title>Avalanche L1: {chain.name}</title>
+      <title>{`Avalanche L1: ${chain.name}`}</title>
       {(active || selected) && (
         <circle r={selected ? 48 : 43} fill={accent} opacity={0.12} />
       )}
