@@ -15,16 +15,6 @@ export const chains: Chain[] = [
     metadata: { network: "mainnet", description: "Avalanche's EVM execution chain" },
   },
   {
-    id: "avalanche-fuji-c-chain",
-    name: "Avalanche Fuji C-Chain",
-    shortName: "Fuji",
-    blockchainId: "11111111111111111111111111111111LpoYY",
-    color: "#8c8c8c",
-    explorerUrl: "https://testnet.snowscan.xyz",
-    enabledByDefault: false,
-    metadata: { network: "fuji", description: "Avalanche public test network" },
-  },
-  {
     id: "beam",
     name: "Beam",
     shortName: "Beam",

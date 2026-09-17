@@ -12,6 +12,6 @@ export type Chain = {
   enabledByDefault: boolean
   metadata?: {
     description?: string
-    network?: "mainnet" | "fuji" | "local"
+    network?: "mainnet"
   }
 }

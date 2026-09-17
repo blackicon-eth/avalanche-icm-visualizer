@@ -4,14 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { chains } from "@/data/chains"
-import { AddChainDialog } from "@/components/chains/AddChainDialog"
-import { readCustomChains, writeCustomChains } from "@/components/chains/chainStorage"
 import { NetworkCanvas } from "@/components/network/NetworkCanvas"
 import { MessageDetails } from "@/components/messages/MessageDetails"
 import { MessageList } from "@/components/messages/MessageList"
 import { MessageFilters, type MessageFilterValues } from "@/components/ui/MessageFilters"
 import { groupMessages, useMessages } from "@/hooks/useMessages"
-import type { Chain } from "@/types"
 
 const queryClient = new QueryClient()
 const defaultFilters: MessageFilterValues = {
@@ -42,17 +39,12 @@ function Visualizer() {
   const pathname = usePathname()
   const params = useSearchParams()
   const [paused, setPaused] = useState(false)
-  const [customChains, setCustomChains] = useState<Chain[]>(() => readCustomChains())
-  const [addChainOpen, setAddChainOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 5000)
     return () => clearInterval(interval)
   }, [])
-  const allChains = useMemo(
-    () => [...chains, ...customChains.filter((custom) => !chains.some((chain) => chain.id === custom.id))],
-    [customChains],
-  )
+  const allChains = chains
   const enabledChainIds = useMemo(() => {
     const chainsParam = params.get("chains")
     const fromUrl = chainsParam?.split(",").filter((id) => allChains.some((chain) => chain.id === id))
@@ -104,16 +96,9 @@ function Visualizer() {
   const setChains = (ids: string[]) => updateParams({ chains: ids.join(",") })
   const toggleChain = (id: string) =>
     setChains(enabledChainIds.includes(id) ? enabledChainIds.filter((item) => item !== id) : [...enabledChainIds, id])
-  const addChain = (chain: Chain) => {
-    const next = [...customChains.filter((item) => item.id !== chain.id), chain]
-    setCustomChains(next)
-    writeCustomChains(next)
-    setChains([...enabledChainIds, chain.id])
-  }
-
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="flex min-h-26 items-center justify-between gap-6 border-b border-border bg-[#080a0d]/86 px-6 py-6">
+      <header className="flex min-h-26 items-center justify-between gap-6 border-b border-border bg-[#080a0d]/86 pl-6 pr-8 py-6">
         <div className="flex items-center gap-4">
           <svg className="h-12 w-12 shrink-0" viewBox="0 0 64 64" role="img" aria-label="Avalanche logo">
             <rect width="64" height="64" rx="14" fill="#0d1014" stroke="#303944" />
@@ -149,7 +134,7 @@ function Visualizer() {
               {enabledChainIds.length}/{allChains.length}
             </span>
           </div>
-          <div className="mt-7 grid gap-1.5">
+          <div className="mt-7 grid grid-cols-2 gap-1.5">
             {allChains.map((chain) => (
               <label
                 key={chain.id}
@@ -170,14 +155,6 @@ function Visualizer() {
               </label>
             ))}
           </div>
-          <button
-            type="button"
-            className="mt-4 flex w-full items-center gap-3 rounded-md border border-[#303944] bg-[#141a20] p-3.5 text-left text-sm text-[#dce1e6] hover:border-[#e84142] hover:text-white"
-            onClick={() => setAddChainOpen(true)}
-          >
-            <span className="font-mono text-sm text-[#e84142]">+</span>Add custom chain
-          </button>
-          <AddChainDialog open={addChainOpen} onOpenChange={setAddChainOpen} onAdd={addChain} />
           <div className="my-8 h-px bg-border" />
           <div>
             <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
