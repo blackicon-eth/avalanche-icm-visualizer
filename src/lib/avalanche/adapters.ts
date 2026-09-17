@@ -73,7 +73,10 @@ export class AvalancheICMDataProvider implements ICMDataProvider {
     try {
       const block = await client.getBlock({ blockTag: "latest" })
       const seconds = Math.max(0, Number(block.timestamp) - normalizeTimestamp(since) / 1000)
-      const blocksBack = BigInt(Math.ceil(seconds * 20))
+      const blocksBack = BigInt(Math.min(
+        Number(this.recentBlockCount),
+        Math.ceil(seconds * 20),
+      ))
       return latest > blocksBack ? latest - blocksBack : BigInt(0)
     } catch {
       return latest > this.recentBlockCount ? latest - this.recentBlockCount : BigInt(0)
