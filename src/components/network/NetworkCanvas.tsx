@@ -68,6 +68,8 @@ export function NetworkCanvas({
     radius: Math.min(dimensions.width, dimensions.height) * 0.35,
     angleOffset: -Math.PI / 2,
   })
+  const layoutReady = dimensions.width !== DEFAULT_WIDTH || dimensions.height !== DEFAULT_HEIGHT
+  const layoutKey = positions.map((position) => `${position.chainId}:${position.x}:${position.y}`).join("|")
   const byId = positionMap(positions)
   const visibleMessages = useMemo(
     () => messages.filter((message) => byId.has(message.source.chainId) && byId.has(message.destination.chainId)),
@@ -100,14 +102,19 @@ export function NetworkCanvas({
     else clock.setPaused(next)
   }
 
+  const setContainerRef = (element: HTMLDivElement | null) => {
+    containerRef.current = element
+    if (element) element.dataset.layoutReady = "true"
+  }
+
   return (
     <div
-      ref={containerRef}
-      className={`network-map-enter relative min-h-[440px] w-full overflow-hidden rounded-xl border border-[#242b34] bg-[#0d1014] ${className ?? ""}`}
+      ref={setContainerRef}
+      className={`network-map-enter relative min-h-110 w-full overflow-hidden rounded-xl border border-[#242b34] bg-[#0d1014] ${className ?? ""}`}
     >
       <svg
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-        className={`network-map-svg h-full min-h-[440px] w-full ${loading ? "opacity-45" : "opacity-100"}`}
+        className={`network-map-svg h-full min-h-110 w-full ${loading ? "opacity-45" : "opacity-100"}`}
         role="img"
         aria-labelledby="network-title network-description"
       >
@@ -127,81 +134,88 @@ export function NetworkCanvas({
           r={Math.min(dimensions.width, dimensions.height) * 0.23}
           fill="url(#network-core-glow)"
         />
-        <g aria-label="Active message connections">
-          {animatedBatches.map((batch) => {
-            const source = byId.get(batch.sourceChainId)
-            const destination = byId.get(batch.destinationChainId)
-            if (!source || !destination) return null
-            const selected = batch.messages.some((message) => selectedMessageId === message.id)
-            return (
-              <MessageArc
-                key={`arc-${batch.id}`}
-                message={batch.messages[0]}
-                source={source}
-                destination={destination}
-                active={activePairs.has(`${batch.sourceChainId}:${batch.destinationChainId}`)}
-                selected={selected}
-                onClick={batch.messages.length === 1 ? () => onMessageClick?.(batch.messages[0]) : undefined}
-              />
-            )
-          })}
-        </g>
-        <g aria-label="Animated messages">
-          {animatedBatches
-            .flatMap((batch) => batch.messages.map((message) => ({ batch, message })))
-            .map(({ batch, message }) => {
-              if (batch.messages.length > 1 && !expandedBatchIds.has(batch.id)) return null
-              const source = byId.get(message.source.chainId)
-              const destination = byId.get(message.destination.chainId)
-              if (!source || !destination) return null
-              return (
-                <MessageParticle
-                  key={`particle-${message.id}`}
-                  message={message}
-                  source={source}
-                  destination={destination}
-                  paused={actualPaused}
-                  onClick={() => onMessageClick?.(message)}
-                />
-              )
-            })}
-          {animatedBatches
-            .filter((batch) => batch.messages.length > 1 && !expandedBatchIds.has(batch.id))
-            .map((batch) => {
-              const source = byId.get(batch.sourceChainId)
-              const destination = byId.get(batch.destinationChainId)
-              if (!source || !destination) return null
-              return (
-                <MessageBatchMarker
-                  key={`marker-${batch.id}`}
-                  batch={batch}
-                  source={source}
-                  destination={destination}
-                  selected={batch.messages.some((message) => selectedMessageId === message.id)}
-                  onClick={() => setExpandedBatchIds((current) => new Set(current).add(batch.id))}
-                />
-              )
-            })}
-        </g>
-        <g aria-label="Avalanche L1 chains">
-          {chains.map((chain) => {
-            const position = byId.get(chain.id)
-            if (!position) return null
-            return (
-              <ChainNode
-                key={chain.id}
-                chain={chain}
-                position={position}
-                messageCount={chainCounts.get(chain.id) ?? 0}
-                active={
-                  activePairs.size > 0 &&
-                  [...activePairs].some((pair) => pair.startsWith(`${chain.id}:`) || pair.endsWith(`:${chain.id}`))
-                }
-                selected={selectedChainId === chain.id}
-                onClick={() => onChainClick?.(chain)}
-              />
-            )
-          })}
+        <g className={`network-activity ${layoutReady ? "network-layout-ready" : ""}`} aria-label="Network activity">
+          {layoutReady && (
+            <>
+              <g aria-label="Active message connections">
+                {animatedBatches.map((batch) => {
+                  const source = byId.get(batch.sourceChainId)
+                  const destination = byId.get(batch.destinationChainId)
+                  if (!source || !destination) return null
+                  const selected = batch.messages.some((message) => selectedMessageId === message.id)
+                  return (
+                    <MessageArc
+                      key={`arc-${batch.id}`}
+                      message={batch.messages[0]}
+                      source={source}
+                      destination={destination}
+                      active={activePairs.has(`${batch.sourceChainId}:${batch.destinationChainId}`)}
+                      selected={selected}
+                    />
+                  )
+                })}
+              </g>
+              <g aria-label="Animated messages">
+                {animatedBatches
+                  .flatMap((batch) => batch.messages.map((message) => ({ batch, message })))
+                  .map(({ batch, message }) => {
+                    if (batch.messages.length > 1 && !expandedBatchIds.has(batch.id)) return null
+                    const source = byId.get(message.source.chainId)
+                    const destination = byId.get(message.destination.chainId)
+                    if (!source || !destination) return null
+                    return (
+                      <MessageParticle
+                        key={`particle-${layoutKey}-${message.id}`}
+                        message={message}
+                        source={source}
+                        destination={destination}
+                        paused={actualPaused}
+                        onClick={() => onMessageClick?.(message)}
+                      />
+                    )
+                  })}
+                {animatedBatches
+                  .filter((batch) => batch.messages.length > 1 && !expandedBatchIds.has(batch.id))
+                  .map((batch) => {
+                    const source = byId.get(batch.sourceChainId)
+                    const destination = byId.get(batch.destinationChainId)
+                    if (!source || !destination) return null
+                    return (
+                      <MessageBatchMarker
+                        key={`marker-${batch.id}`}
+                        batch={batch}
+                        source={source}
+                        destination={destination}
+                        selected={batch.messages.some((message) => selectedMessageId === message.id)}
+                        onClick={() => setExpandedBatchIds((current) => new Set(current).add(batch.id))}
+                      />
+                    )
+                  })}
+              </g>
+              <g aria-label="Avalanche L1 chains">
+                {chains.map((chain) => {
+                  const position = byId.get(chain.id)
+                  if (!position) return null
+                  return (
+                    <ChainNode
+                      key={chain.id}
+                      chain={chain}
+                      position={position}
+                      messageCount={chainCounts.get(chain.id) ?? 0}
+                      active={
+                        activePairs.size > 0 &&
+                        [...activePairs].some(
+                          (pair) => pair.startsWith(`${chain.id}:`) || pair.endsWith(`:${chain.id}`),
+                        )
+                      }
+                      selected={selectedChainId === chain.id}
+                      onClick={() => onChainClick?.(chain)}
+                    />
+                  )
+                })}
+              </g>
+            </>
+          )}
         </g>
       </svg>
       <div

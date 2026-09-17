@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { chains } from "@/data/chains"
 import { AvalancheICMDataProvider } from "@/lib/avalanche/adapters"
 import type { ICMDataProvider } from "@/lib/providers"
@@ -71,8 +71,19 @@ export function useMessages({
     },
     refetchInterval: paused ? false : 5000,
     refetchIntervalInBackground: false,
-    staleTime: 2500,
+    refetchOnMount: "always",
+    retry: false,
+    staleTime: 0,
   })
+  const [refreshingSelection, setRefreshingSelection] = useState(false)
+  const previousQueryKey = useRef(queryKey)
+
+  useEffect(() => {
+    if (previousQueryKey.current === queryKey) return
+    previousQueryKey.current = queryKey
+    setRefreshingSelection(true)
+    void query.refetch().finally(() => setRefreshingSelection(false))
+  }, [query, queryKey])
 
   const messages = useMemo(() => {
     return [...(query.data ?? [])]
@@ -80,5 +91,5 @@ export function useMessages({
       .slice(0, MESSAGE_RETENTION_LIMIT)
   }, [query.data])
 
-  return { ...query, messages, batches: groupMessages(messages) }
+  return { ...query, isLoading: query.isLoading || refreshingSelection, messages, batches: groupMessages(messages) }
 }

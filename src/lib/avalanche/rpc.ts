@@ -17,7 +17,9 @@ export function getPublicClient(chain: Chain, rpcUrl?: string): AvalanchePublicC
   const cached = clients.get(url)
   if (cached) return cached
 
-  const client = createPublicClient({ transport: http(url) }) as AvalanchePublicClient
+  const client = createPublicClient({
+    transport: http(url, { retryCount: 0, timeout: 10_000 }),
+  }) as AvalanchePublicClient
   clients.set(url, client)
   return client
 }

@@ -2,7 +2,6 @@
 
 import type { MouseEventHandler } from "react"
 import { motion } from "motion/react"
-
 import type { Chain } from "@/types/chain"
 import type { ChainPosition } from "@/types/visualization"
 
@@ -32,7 +31,8 @@ export function ChainNode({
       role="button"
       tabIndex={0}
       aria-label={label}
-      initial={false}
+      transform={`translate(${position.x} ${position.y})`}
+      initial={{ x: position.x, y: position.y }}
       animate={{ x: position.x, y: position.y }}
       transition={{ type: "spring", stiffness: 150, damping: 24, mass: 0.7 }}
       onClick={onClick}

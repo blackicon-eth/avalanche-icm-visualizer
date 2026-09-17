@@ -64,14 +64,18 @@ export class AvalancheICMDataProvider implements ICMDataProvider {
       messagesByDestination.set(message.destination.chainId, destinationMessages)
     }
 
-    const updates = await Promise.all(
+    const updates = await Promise.allSettled(
       [...messagesByDestination.entries()].map(async ([chainId, destinationMessages]) => {
         const chain = this.chains.find((item) => item.id === chainId)
         if (!chain || !chain.teleporterAddress) return []
         return this.readDeliveryEvents(chain, destinationMessages)
       }),
     )
-    const byMessageId = new Map(updates.flat().map((update) => [update.messageId.toLowerCase(), update]))
+    const byMessageId = new Map(
+      updates
+        .flatMap((result) => (result.status === "fulfilled" ? result.value : []))
+        .map((update) => [update.messageId.toLowerCase(), update]),
+    )
 
     return messages.map((message) => {
       const messageId = message.teleporter?.messageId
