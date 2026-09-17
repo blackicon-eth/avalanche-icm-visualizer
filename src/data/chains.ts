@@ -61,7 +61,7 @@ export const chains: Chain[] = [
     rpcUrl: "https://subnets.avax.network/straitsx/mainnet/rpc",
     warpMessengerAddress: WARP_MESSENGER_ADDRESS,
     teleporterAddress: TELEPORTER_MESSENGER_ADDRESS,
-    enabledByDefault: false,
+    enabledByDefault: true,
     metadata: { network: "mainnet", description: "Stablecoin-focused Avalanche L1" },
   },
   {
