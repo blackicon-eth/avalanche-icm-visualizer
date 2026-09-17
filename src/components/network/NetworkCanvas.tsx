@@ -1,20 +1,24 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useMemo, useRef, useState } from "react"
 
 import { useAnimationClock, type AnimationSpeed } from "@/hooks/useAnimationClock"
 import { useNetworkLayout } from "@/hooks/useNetworkLayout"
 import { ChainNode } from "@/components/network/ChainNode"
 import { MessageArc } from "@/components/network/MessageArc"
 import { MessageParticle } from "@/components/network/MessageParticle"
+import { MessageBatchMarker } from "@/components/network/MessageBatchMarker"
 import { NetworkControls } from "@/components/network/NetworkControls"
+import { groupMessages } from "@/hooks/useMessages"
 import type { Chain } from "@/types/chain"
 import type { ICMMessage } from "@/types/message"
+import type { MessageBatch } from "@/types/batch"
 import type { ChainPosition } from "@/types/visualization"
 
 export type NetworkCanvasProps = {
   chains: readonly Chain[]
   messages?: readonly ICMMessage[]
+  batches?: readonly MessageBatch[]
   enabledChainIds?: readonly string[]
   selectedMessageId?: string
   selectedChainId?: string
@@ -41,6 +45,7 @@ function positionMap(positions: readonly ChainPosition[]) {
 export function NetworkCanvas({
   chains,
   messages = [],
+  batches,
   enabledChainIds,
   selectedMessageId,
   selectedChainId,
@@ -72,7 +77,15 @@ export function NetworkCanvas({
     [byId, messages],
   )
   const animatedMessages = visibleMessages.slice(-Math.max(0, maxAnimatedMessages))
-  const activePairs = new Set(animatedMessages.map((message) => `${message.source.chainId}:${message.destination.chainId}`))
+  const animatedBatches = useMemo(() => {
+    const visibleIds = new Set(animatedMessages.map((message) => message.id))
+    return (batches ? batches : groupMessages(visibleMessages)).map((batch) => ({
+      ...batch,
+      messages: batch.messages.filter((message) => visibleIds.has(message.id)),
+    })).filter((batch) => batch.messages.length > 0)
+  }, [animatedMessages, batches, visibleMessages])
+  const [expandedBatchIds, setExpandedBatchIds] = useState<Set<string>>(new Set())
+  const activePairs = new Set(animatedBatches.map((batch) => `${batch.sourceChainId}:${batch.destinationChainId}`))
   const chainCounts = useMemo(() => {
     const counts = new Map<string, number>()
     visibleMessages.forEach((message) => {
@@ -102,29 +115,31 @@ export function NetworkCanvas({
         </defs>
         <circle cx={width / 2} cy={height / 2} r={Math.min(width, height) * 0.23} fill="url(#network-core-glow)" />
         <g className="connections" aria-label="Active message connections">
-          {animatedMessages.map((message) => {
-            const source = byId.get(message.source.chainId)
-            const destination = byId.get(message.destination.chainId)
-            if (!source || !destination) return null
-            return (
-              <MessageArc
-                key={`arc-${message.id}`}
-                message={message}
-                source={source}
-                destination={destination}
-                active={activePairs.has(`${message.source.chainId}:${message.destination.chainId}`)}
-                selected={selectedMessageId === message.id}
-                onClick={() => onMessageClick?.(message)}
-              />
-            )
-          })}
+           {animatedBatches.map((batch) => {
+             const source = byId.get(batch.sourceChainId)
+             const destination = byId.get(batch.destinationChainId)
+             if (!source || !destination) return null
+             const selected = batch.messages.some((message) => selectedMessageId === message.id)
+             return (
+               <MessageArc
+                 key={`arc-${batch.id}`}
+                 message={batch.messages[0]}
+                 source={source}
+                 destination={destination}
+                 active={activePairs.has(`${batch.sourceChainId}:${batch.destinationChainId}`)}
+                 selected={selected}
+                 onClick={batch.messages.length === 1 ? () => onMessageClick?.(batch.messages[0]) : undefined}
+               />
+             )
+           })}
         </g>
         <g className="messages" aria-label="Animated messages">
-          {animatedMessages.map((message) => {
-            const source = byId.get(message.source.chainId)
-            const destination = byId.get(message.destination.chainId)
-            if (!source || !destination) return null
-            return (
+           {animatedBatches.flatMap((batch) => batch.messages.map((message) => ({ batch, message }))).map(({ batch, message }) => {
+             if (batch.messages.length > 1 && !expandedBatchIds.has(batch.id)) return null
+             const source = byId.get(message.source.chainId)
+             const destination = byId.get(message.destination.chainId)
+             if (!source || !destination) return null
+             return (
               <MessageParticle
                 key={`particle-${message.id}`}
                 message={message}
@@ -134,8 +149,14 @@ export function NetworkCanvas({
                 speed={actualSpeed}
                 onClick={() => onMessageClick?.(message)}
               />
-            )
-          })}
+             )
+           })}
+           {animatedBatches.filter((batch) => batch.messages.length > 1 && !expandedBatchIds.has(batch.id)).map((batch) => {
+             const source = byId.get(batch.sourceChainId)
+             const destination = byId.get(batch.destinationChainId)
+             if (!source || !destination) return null
+             return <MessageBatchMarker key={`marker-${batch.id}`} batch={batch} source={source} destination={destination} selected={batch.messages.some((message) => selectedMessageId === message.id)} onClick={() => setExpandedBatchIds((current) => new Set(current).add(batch.id))} />
+           })}
         </g>
         <g className="chains" aria-label="Avalanche L1 chains">
           {chains.map((chain) => {

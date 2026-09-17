@@ -16,26 +16,31 @@ const mockProvider = new MockICMDataProvider()
 const MESSAGE_RETENTION_LIMIT = 100
 
 export function groupMessages(messages: readonly ICMMessage[], windowMs = 1000): MessageBatch[] {
-  const batches: MessageBatch[] = []
+  const batchesByRoute = new Map<string, MessageBatch[]>()
   const ordered = [...messages].sort((a, b) => (a.emittedAt ?? 0) - (b.emittedAt ?? 0))
 
   for (const message of ordered) {
-    const last = batches[batches.length - 1]
-    const sameRoute = last && last.sourceChainId === message.source.chainId && last.destinationChainId === message.destination.chainId
-    const closeEnough = last && (message.emittedAt ?? 0) - last.startedAt <= windowMs
-    if (last && sameRoute && closeEnough) {
+    const route = `${message.source.chainId}:${message.destination.chainId}`
+    const routeBatches = batchesByRoute.get(route) ?? []
+    const last = routeBatches[routeBatches.length - 1]
+    const timestamp = message.emittedAt ?? 0
+    const closeEnough = last && timestamp - last.startedAt <= windowMs
+
+    if (last && closeEnough) {
       last.messages.push(message)
     } else {
-      batches.push({
+      routeBatches.push({
         id: `batch-${message.id}`,
         sourceChainId: message.source.chainId,
         destinationChainId: message.destination.chainId,
         messages: [message],
-        startedAt: message.emittedAt ?? Date.now(),
+        startedAt: timestamp,
       })
+      batchesByRoute.set(route, routeBatches)
     }
   }
-  return batches
+
+  return [...batchesByRoute.values()].flat().sort((a, b) => a.startedAt - b.startedAt)
 }
 
 export function useMessages({ mode = "mock", chainIds, paused = false, chains: availableChains = chains }: { mode?: DataMode; chainIds?: string[]; paused?: boolean; chains?: Chain[] } = {}) {
