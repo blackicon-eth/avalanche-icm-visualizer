@@ -161,18 +161,13 @@ function Visualizer() {
             className="page-enter border-b border-border bg-[#0a0d11]/62 px-5 py-8 sm:px-6.5 lg:border-b-0 lg:border-r lg:py-10.5"
             style={{ "--entry-delay": "130ms" } as React.CSSProperties}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
-                  01 / Networks
-                </p>
-                <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em]">Active chains</h2>
-              </div>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-bold tracking-[-.03em]">Active chains</h2>
               <span className="pt-0.5 font-mono text-[13px] text-[#8b96a2]">
                 {enabledChainIds.length}/{allChains.length}
               </span>
             </div>
-            <div className="mt-7 grid grid-cols-2 gap-1.5">
+            <div className="mt-5 grid grid-cols-2 gap-1.5">
               {allChains.map((chain) => (
                 <label
                   key={chain.id}
@@ -194,14 +189,9 @@ function Visualizer() {
               ))}
             </div>
             <div className="my-8 h-px bg-border" />
-            <div>
-              <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
-                02 / Signal
-              </p>
-              <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em]">Motion control</h2>
-            </div>
+            <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em]">Motion control</h2>
             <button
-              className="mt-5 flex w-full items-center gap-3 rounded-md border border-[#303944] bg-[#141a20] p-3.5 text-left text-sm text-[#dce1e6] hover:border-[#e84142] hover:text-white"
+              className="mt-5 flex w-full cursor-pointer items-center gap-3 rounded-md border border-[#303944] bg-[#141a20] p-3.5 text-left text-sm text-[#dce1e6] hover:border-[#e84142] hover:text-white transition-colors"
               type="button"
               onClick={() => setPaused((value) => !value)}
             >
@@ -262,7 +252,7 @@ function Visualizer() {
               ) : isError ? (
                 <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-[#303944] px-6 py-14 text-sm text-[#84909c]">
                   <strong className="text-[#c6ced6]">Unable to load ICM data.</strong>
-                  <button type="button" className="text-[#e84142] underline" onClick={() => refetch()}>
+                  <button type="button" className="cursor-pointer text-[#e84142] underline" onClick={() => refetch()}>
                     Retry connection
                   </button>
                 </div>

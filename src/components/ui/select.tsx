@@ -16,7 +16,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-11 w-full items-center justify-between rounded-lg border border-[#2c353e] bg-[#10151a] px-3 text-left text-base text-[#c8d0d8] outline-none transition-colors hover:border-[#66717d] focus:border-[#e84142] focus:ring-2 focus:ring-[#e84142]/20 disabled:cursor-not-allowed disabled:opacity-50",
+      "flex h-11 w-full cursor-pointer items-center justify-between rounded-lg border border-[#2c353e] bg-[#10151a] px-3 text-left text-base text-[#c8d0d8] outline-none transition-colors hover:border-[#66717d] focus:border-[#e84142] focus:ring-2 focus:ring-[#e84142]/20 disabled:cursor-not-allowed disabled:opacity-50",
       className,
     )}
     {...props}
@@ -35,7 +35,7 @@ const SelectScrollUpButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
     ref={ref}
-    className={cn("flex cursor-default items-center justify-center py-1", className)}
+    className={cn("flex cursor-pointer items-center justify-center py-1", className)}
     {...props}
   >
     <ChevronUp className="h-4 w-4" />
@@ -49,7 +49,7 @@ const SelectScrollDownButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollDownButton
     ref={ref}
-    className={cn("flex cursor-default items-center justify-center py-1", className)}
+    className={cn("flex cursor-pointer items-center justify-center py-1", className)}
     {...props}
   >
     <ChevronDown className="h-4 w-4" />
@@ -108,7 +108,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-md py-2.5 pl-8 pr-2 text-sm outline-none focus:bg-[#29313a] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full cursor-pointer select-none items-center rounded-md py-2.5 pl-8 pr-2 text-sm outline-none focus:bg-[#29313a] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     {...props}

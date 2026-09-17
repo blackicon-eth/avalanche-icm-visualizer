@@ -24,7 +24,7 @@ export function ModeControl({ value, onChange, className }: ModeControlProps) {
           aria-pressed={value === mode}
           onClick={() => onChange(mode)}
           className={cn(
-            "rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors",
+            "cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors",
             value === mode ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground",
           )}
         >

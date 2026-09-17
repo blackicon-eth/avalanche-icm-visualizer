@@ -18,7 +18,7 @@ export function Header({ live, onLiveChange, mode, onModeChange, onMenuClick }: 
         <button
           type="button"
           onClick={onMenuClick}
-          className="rounded-md p-2 text-muted-foreground hover:bg-muted md:hidden"
+          className="cursor-pointer rounded-md p-2 text-muted-foreground hover:bg-muted md:hidden"
           aria-label="Open navigation"
         >
           ☰

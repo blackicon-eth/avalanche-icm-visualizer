@@ -45,7 +45,7 @@ export function MessageList({ messages, chains, selectedMessageId, onSelectMessa
               type="button"
               onClick={() => onSelectMessage?.(message)}
               aria-pressed={selected}
-              className={`group w-full rounded-xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 ${selected ? "border-foreground/40 bg-muted/70" : "border-border bg-background/50 hover:border-foreground/25 hover:bg-muted/40"}`}
+              className={`group w-full cursor-pointer rounded-xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 ${selected ? "border-foreground/40 bg-muted/70" : "border-border bg-background/50 hover:border-foreground/25 hover:bg-muted/40"}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">

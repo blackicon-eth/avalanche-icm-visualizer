@@ -27,7 +27,7 @@ function CopyButton({ value, label = "Copy" }: { value?: string; label?: string 
         window.setTimeout(() => setCopied(false), 1400)
       }}
       title={copied ? "Copied" : label}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-foreground/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+      className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-foreground/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
     >
       {copied ? (
         <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -61,7 +61,7 @@ function Field({
             target="_blank"
             rel="noreferrer"
             aria-label={`Open ${label}`}
-            className="shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+            className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </a>
@@ -119,7 +119,7 @@ export function MessageDetails({ message, chains, onClose }: MessageDetailsProps
               type="button"
               onClick={onClose}
               aria-label="Close message details"
-              className="rounded-lg border border-border px-3 py-2 text-lg leading-none text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-lg leading-none text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
             >
               ×
             </button>
