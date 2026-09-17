@@ -53,12 +53,13 @@ export function MessageTimeline({ message }: { message: ICMMessage }) {
     {
       key: "relayer",
       title: "Relayer",
-      detail:
-        message.status === "observed"
+      detail: message.teleporter?.relayerAddress
+        ? `Destination delivery was submitted by relayer ${message.teleporter.relayerAddress}.`
+        : message.status === "observed"
           ? "No relayer activity is observed yet."
           : "The message status indicates progress, but relayer pickup or attribution is not directly observed.",
-      evidence: "inferred",
-      state: "current",
+      evidence: message.teleporter?.relayerAddress ? "observed" : "inferred",
+      state: message.status === "observed" ? "current" : "complete",
     },
     {
       key: "verification",

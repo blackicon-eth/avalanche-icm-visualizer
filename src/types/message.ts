@@ -33,6 +33,7 @@ export type ICMMessage = {
   teleporter?: {
     messageId?: string
     destinationAddress?: string
+    relayerAddress?: string
     requiredGasLimit?: bigint
     feeInfo?: unknown
   }

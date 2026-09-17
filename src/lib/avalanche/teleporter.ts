@@ -43,6 +43,79 @@ export const TELEPORTER_ABI = [
   },
 ] as const
 
+export const TELEPORTER_DELIVERY_ABI = [
+  {
+    type: "event",
+    name: "ReceiveCrossChainMessage",
+    inputs: [
+      { indexed: true, name: "messageID", type: "bytes32" },
+      { indexed: true, name: "sourceBlockchainID", type: "bytes32" },
+      { indexed: true, name: "deliverer", type: "address" },
+      { indexed: false, name: "rewardRedeemer", type: "address" },
+      {
+        indexed: false,
+        name: "message",
+        type: "tuple",
+        components: [
+          { name: "messageNonce", type: "uint256" },
+          { name: "originSenderAddress", type: "address" },
+          { name: "destinationBlockchainID", type: "bytes32" },
+          { name: "destinationAddress", type: "address" },
+          { name: "requiredGasLimit", type: "uint256" },
+          { name: "allowedRelayerAddresses", type: "address[]" },
+          {
+            name: "receipts",
+            type: "tuple[]",
+            components: [
+              { name: "receivedMessageNonce", type: "uint256" },
+              { name: "relayerRewardAddress", type: "address" },
+            ],
+          },
+          { name: "message", type: "bytes" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "event",
+    name: "MessageExecuted",
+    inputs: [
+      { indexed: true, name: "messageID", type: "bytes32" },
+      { indexed: true, name: "sourceBlockchainID", type: "bytes32" },
+    ],
+  },
+  {
+    type: "event",
+    name: "MessageExecutionFailed",
+    inputs: [
+      { indexed: true, name: "messageID", type: "bytes32" },
+      { indexed: true, name: "sourceBlockchainID", type: "bytes32" },
+      {
+        indexed: false,
+        name: "message",
+        type: "tuple",
+        components: [
+          { name: "messageNonce", type: "uint256" },
+          { name: "originSenderAddress", type: "address" },
+          { name: "destinationBlockchainID", type: "bytes32" },
+          { name: "destinationAddress", type: "address" },
+          { name: "requiredGasLimit", type: "uint256" },
+          { name: "allowedRelayerAddresses", type: "address[]" },
+          {
+            name: "receipts",
+            type: "tuple[]",
+            components: [
+              { name: "receivedMessageNonce", type: "uint256" },
+              { name: "relayerRewardAddress", type: "address" },
+            ],
+          },
+          { name: "message", type: "bytes" },
+        ],
+      },
+    ],
+  },
+] as const
+
 export type TeleporterMessage = {
   messageNonce: bigint
   originSenderAddress: Address
@@ -61,6 +134,26 @@ export type TeleporterEvent = {
   message: Hex
   requiredGasLimit: bigint
   feeInfo: unknown
+}
+
+export type TeleporterDeliveryEvent =
+  | { type: "received"; messageId: Hex; relayerAddress: Address }
+  | { type: "executed"; messageId: Hex }
+  | { type: "failed"; messageId: Hex }
+
+export function decodeTeleporterDeliveryLog(log: Log): TeleporterDeliveryEvent | null {
+  try {
+    const decoded = decodeEventLog({ abi: TELEPORTER_DELIVERY_ABI, data: log.data, topics: log.topics })
+    const args = decoded.args as { messageID: Hex; deliverer?: Address }
+    if (decoded.eventName === "ReceiveCrossChainMessage") {
+      return { type: "received", messageId: args.messageID, relayerAddress: args.deliverer ?? "0x" }
+    }
+    if (decoded.eventName === "MessageExecuted") return { type: "executed", messageId: args.messageID }
+    if (decoded.eventName === "MessageExecutionFailed") return { type: "failed", messageId: args.messageID }
+    return null
+  } catch {
+    return null
+  }
 }
 
 export function decodeTeleporterLog(log: Log): TeleporterEvent | null {

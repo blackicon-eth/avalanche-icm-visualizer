@@ -162,6 +162,7 @@ export function MessageDetails({ message, chains, onClose }: MessageDetailsProps
                       value={message.destination.txHash}
                       copyValue={message.destination.txHash}
                     />
+                    <Field label="Relayer" value={message.teleporter?.relayerAddress} />
                   </div>
                   <Field label="Payload type" value={message.payload.type} />
                   <div>
