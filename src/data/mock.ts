@@ -32,7 +32,17 @@ export async function* createMockMessageStream(options: { intervalMs?: number; s
   while (!options.signal?.aborted) {
     const initial = createMockMessage()
     for (const status of progression) {
-      yield { ...initial, status }
+      const deliveredAt = status === "delivered" ? (initial.emittedAt ?? Date.now()) + 18_000 : undefined
+      yield {
+        ...initial,
+        status,
+        deliveredAt,
+        destination: {
+          ...initial.destination,
+          txHash: deliveredAt ? initial.source.txHash : undefined,
+          timestamp: deliveredAt,
+        },
+      }
       if (status !== "delivered") await new Promise((resolve) => setTimeout(resolve, intervalMs))
     }
   }

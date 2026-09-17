@@ -12,7 +12,7 @@ export class MockICMDataProvider implements ICMDataProvider {
     const chainIds = params?.chainIds
     const since = params?.since
     const result = mockMessages.filter((item) => {
-      const matchesChains = !chainIds?.length || chainIds.includes(item.source.chainId) || chainIds.includes(item.destination.chainId)
+      const matchesChains = !chainIds?.length || (chainIds.includes(item.source.chainId) && chainIds.includes(item.destination.chainId))
       return matchesChains && (!since || (item.emittedAt ?? 0) >= since)
     })
     return result.slice(0, params?.limit ?? result.length)

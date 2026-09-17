@@ -1,7 +1,8 @@
 import type { ICMMessage, ICMMessageProtocol, ICMMessageStatus } from "@/types"
 import { chains } from "./chains"
 
-const BASE_TIMESTAMP = 1_790_000_000_000
+// Keep fixture ages stable while anchoring them to the current session.
+const BASE_TIMESTAMP = Date.now()
 const addresses = [
   "0x1111111111111111111111111111111111111111",
   "0x2222222222222222222222222222222222222222",
