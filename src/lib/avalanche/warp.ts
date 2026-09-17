@@ -59,13 +59,14 @@ export function normalizeWarpMessage(input: {
   emittedAt?: number
   explorerTx?: string
 }): ICMMessage {
+  const emittedAt = normalizeTimestamp(input.emittedAt)
   return {
     id: input.id,
     protocol: "warp",
-    source: { chainId: input.sourceChainId, txHash: input.txHash, blockNumber: input.blockNumber, timestamp: input.emittedAt },
+    source: { chainId: input.sourceChainId, txHash: input.txHash, blockNumber: input.blockNumber, timestamp: emittedAt },
     destination: { chainId: "unknown" },
     status: "observed",
-    emittedAt: input.emittedAt,
+    emittedAt,
     payload: { raw: input.event.payload, type: "warp" },
     warp: {
       messageId: input.event.messageId,
@@ -74,4 +75,9 @@ export function normalizeWarpMessage(input: {
     },
     explorer: input.explorerTx ? { sourceTx: input.explorerTx } : undefined,
   }
+}
+
+function normalizeTimestamp(timestamp?: number) {
+  if (timestamp === undefined || !Number.isFinite(timestamp)) return undefined
+  return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp
 }

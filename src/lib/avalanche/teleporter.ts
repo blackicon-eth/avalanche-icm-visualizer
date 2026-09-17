@@ -61,15 +61,17 @@ export function normalizeTeleporterMessage(input: {
   txHash?: string
   blockNumber?: bigint
   emittedAt?: number
+  destinationChainId?: string
   explorerTx?: string
 }): ICMMessage {
+  const emittedAt = normalizeTimestamp(input.emittedAt)
   return {
     id: input.id,
     protocol: "teleporter",
-    source: { chainId: input.sourceChainId, txHash: input.txHash, blockNumber: input.blockNumber, timestamp: input.emittedAt },
-    destination: { chainId: input.event.destinationBlockchainId, },
+    source: { chainId: input.sourceChainId, txHash: input.txHash, blockNumber: input.blockNumber, timestamp: emittedAt },
+    destination: { chainId: input.destinationChainId ?? "unknown" },
     status: "observed",
-    emittedAt: input.emittedAt,
+    emittedAt,
     payload: { raw: input.event.message, type: "teleporter" },
     teleporter: {
       messageId: input.event.messageId,
@@ -79,4 +81,9 @@ export function normalizeTeleporterMessage(input: {
     },
     explorer: input.explorerTx ? { sourceTx: input.explorerTx } : undefined,
   }
+}
+
+function normalizeTimestamp(timestamp?: number) {
+  if (timestamp === undefined || !Number.isFinite(timestamp)) return undefined
+  return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp
 }
