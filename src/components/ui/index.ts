@@ -1,4 +1,13 @@
 export { FilterSelect } from "./FilterSelect"
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+export {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "./pagination"
 export { LiveControl } from "./LiveControl"
 export { MessageFilters } from "./MessageFilters"
 export { ModeControl } from "./ModeControl"

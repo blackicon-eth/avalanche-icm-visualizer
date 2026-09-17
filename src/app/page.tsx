@@ -8,6 +8,14 @@ import { NetworkCanvas } from "@/components/network/NetworkCanvas"
 import { MessageDetails } from "@/components/messages/MessageDetails"
 import { MessageList } from "@/components/messages/MessageList"
 import { MessageFilters, type MessageFilterValues } from "@/components/ui/MessageFilters"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { groupMessages, useMessages } from "@/hooks/useMessages"
 
 const queryClient = new QueryClient()
@@ -21,6 +29,7 @@ const defaultFilters: MessageFilterValues = {
 const protocolValues = ["all", "warp", "teleporter", "unknown"] as const
 const statusValues = ["all", "observed", "relaying", "delivered", "failed"] as const
 const timeValues = ["all", "hour", "day", "week"] as const
+const MESSAGE_PAGE_SIZE = 4
 
 function isProtocol(value: string | null): value is MessageFilterValues["protocol"] {
   return protocolValues.some((option) => option === value)
@@ -40,6 +49,7 @@ function Visualizer() {
   const params = useSearchParams()
   const [paused, setPaused] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  const [messagePage, setMessagePage] = useState(1)
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 5000)
     return () => clearInterval(interval)
@@ -81,6 +91,12 @@ function Visualizer() {
     )
   })
   const visibleBatches = useMemo(() => groupMessages(visibleMessages), [visibleMessages])
+  const pageCount = Math.max(1, Math.ceil(visibleMessages.length / MESSAGE_PAGE_SIZE))
+  const currentPage = Math.min(messagePage, pageCount)
+  const paginatedMessages = visibleMessages.slice(
+    (currentPage - 1) * MESSAGE_PAGE_SIZE,
+    currentPage * MESSAGE_PAGE_SIZE,
+  )
   const selectedMessage = messages.find((message) => message.id === params.get("message")) ?? null
   const updateParams = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params.toString())
@@ -202,7 +218,8 @@ function Visualizer() {
             </div>
             <MessageFilters
               value={filters}
-              onChange={(next) =>
+              onChange={(next) => {
+                setMessagePage(1)
                 updateParams({
                   protocol: next.protocol,
                   status: next.status,
@@ -210,7 +227,7 @@ function Visualizer() {
                   source: next.source,
                   destination: next.destination,
                 })
-              }
+              }}
               chains={allChains}
               className="my-7 rounded-lg border border-border bg-[#10151a]/70 p-4 sm:p-5"
             />
@@ -232,12 +249,56 @@ function Visualizer() {
                 <span>Try enabling another chain or removing a filter.</span>
               </div>
             ) : (
-              <MessageList
-                messages={visibleMessages}
-                chains={allChains}
-                selectedMessageId={selectedMessage?.id}
-                onSelectMessage={(message) => updateParams({ message: message.id })}
-              />
+              <>
+                <MessageList
+                  messages={paginatedMessages}
+                  chains={allChains}
+                  selectedMessageId={selectedMessage?.id}
+                  onSelectMessage={(message) => updateParams({ message: message.id })}
+                />
+                {pageCount > 1 && (
+                  <Pagination className="mt-6">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#activity"
+                          aria-disabled={currentPage === 1}
+                          className={currentPage === 1 ? "pointer-events-none opacity-40" : undefined}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            setMessagePage((page) => Math.max(1, page - 1))
+                          }}
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#activity"
+                            isActive={currentPage === page}
+                            onClick={(event) => {
+                              event.preventDefault()
+                              setMessagePage(page)
+                            }}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#activity"
+                          aria-disabled={currentPage === pageCount}
+                          className={currentPage === pageCount ? "pointer-events-none opacity-40" : undefined}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            setMessagePage((page) => Math.min(pageCount, page + 1))
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </>
             )}
           </div>
         </section>

@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 
 export type FilterOption<T extends string> = { value: T; label: string }
 
@@ -16,17 +17,18 @@ export function FilterSelect<T extends string>({ label, value, options, onChange
   return (
     <label className={cn("flex min-w-36 flex-col gap-1.5", className)}>
       <span className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as T)}
-        className="h-11 rounded-lg border border-border bg-background px-3 text-base outline-none transition-colors focus:border-foreground"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={(next) => onChange(next as T)}>
+        <SelectTrigger aria-label={label}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </label>
   )
 }

@@ -8,7 +8,6 @@ import { ChainNode } from "@/components/network/ChainNode"
 import { MessageArc } from "@/components/network/MessageArc"
 import { MessageParticle } from "@/components/network/MessageParticle"
 import { MessageBatchMarker } from "@/components/network/MessageBatchMarker"
-import { NetworkControls } from "@/components/network/NetworkControls"
 import { groupMessages } from "@/hooks/useMessages"
 import type { Chain } from "@/types/chain"
 import type { ICMMessage } from "@/types/message"
@@ -204,13 +203,8 @@ export function NetworkCanvas({
         </g>
       </svg>
       <div className="pointer-events-none absolute left-6 top-6 font-mono text-xs uppercase tracking-[0.22em] text-[#687382]">
-        {actualPaused ? "Network paused" : `${visibleMessages.length} recent messages`}
+        Network Map
       </div>
-      <NetworkControls
-        paused={actualPaused}
-        onTogglePaused={() => setPaused(!actualPaused)}
-        className="absolute bottom-6 left-6 rounded-full bg-[#11151b]/90 px-1.5 py-1.5"
-      />
     </div>
   )
 }
