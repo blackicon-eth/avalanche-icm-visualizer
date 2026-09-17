@@ -17,6 +17,21 @@ import type { Chain } from "@/types"
 
 const queryClient = new QueryClient()
 const defaultFilters: MessageFilterValues = { protocol: "all", status: "all", time: "all", source: "all", destination: "all" }
+const protocolValues = ["all", "warp", "teleporter", "unknown"] as const
+const statusValues = ["all", "observed", "relaying", "delivered", "failed"] as const
+const timeValues = ["all", "hour", "day", "week"] as const
+
+function isProtocol(value: string | null): value is MessageFilterValues["protocol"] {
+  return protocolValues.some((option) => option === value)
+}
+
+function isStatus(value: string | null): value is MessageFilterValues["status"] {
+  return statusValues.some((option) => option === value)
+}
+
+function isTime(value: string | null): value is MessageFilterValues["time"] {
+  return timeValues.some((option) => option === value)
+}
 
 function Visualizer() {
   const router = useRouter()
@@ -27,20 +42,24 @@ function Visualizer() {
   const [customChains, setCustomChains] = useState<Chain[]>(() => readCustomChains())
   const [addChainOpen, setAddChainOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
-  const mode = (params.get("mode") === "live" ? "live" : "mock") as DataMode
+  const mode: DataMode = params.get("mode") === "live" ? "live" : "mock"
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 5000)
     return () => clearInterval(interval)
   }, [])
   const allChains = useMemo(() => [...chains, ...customChains.filter((custom) => !chains.some((chain) => chain.id === custom.id))], [customChains])
   const enabledChainIds = useMemo(() => {
-    const fromUrl = params.get("chains")?.split(",").filter((id) => allChains.some((chain) => chain.id === id))
-    return fromUrl?.length ? fromUrl : allChains.filter((chain) => chain.enabledByDefault).map((chain) => chain.id)
+    const chainsParam = params.get("chains")
+    const fromUrl = chainsParam?.split(",").filter((id) => allChains.some((chain) => chain.id === id))
+    return fromUrl && (fromUrl.length > 0 || chainsParam === "") ? fromUrl : allChains.filter((chain) => chain.enabledByDefault).map((chain) => chain.id)
   }, [allChains, params])
+  const protocol = params.get("protocol")
+  const status = params.get("status")
+  const time = params.get("time")
   const filters: MessageFilterValues = {
-    protocol: (params.get("protocol") as MessageFilterValues["protocol"]) || defaultFilters.protocol,
-    status: (params.get("status") as MessageFilterValues["status"]) || defaultFilters.status,
-    time: (params.get("time") as MessageFilterValues["time"]) || defaultFilters.time,
+    protocol: isProtocol(protocol) ? protocol : defaultFilters.protocol,
+    status: isStatus(status) ? status : defaultFilters.status,
+    time: isTime(time) ? time : defaultFilters.time,
     source: params.get("source") || defaultFilters.source,
     destination: params.get("destination") || defaultFilters.destination,
   }
@@ -58,7 +77,7 @@ function Visualizer() {
   const selectedMessage = messages.find((message) => message.id === params.get("message")) ?? null
   const updateParams = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params.toString())
-    Object.entries(updates).forEach(([key, value]) => value && value !== "all" ? next.set(key, value) : next.delete(key))
+    Object.entries(updates).forEach(([key, value]) => key === "chains" && value !== undefined ? next.set(key, value) : value && value !== "all" ? next.set(key, value) : next.delete(key))
     router.replace(`${pathname}?${next.toString()}`, { scroll: false })
   }
   const setChains = (ids: string[]) => updateParams({ chains: ids.join(",") })
