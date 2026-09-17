@@ -1,0 +1,88 @@
+import type { Chain } from "@/types"
+
+export const chains: Chain[] = [
+  {
+    id: "avalanche-c-chain",
+    name: "Avalanche C-Chain",
+    shortName: "C-Chain",
+    blockchainId: "2Z6YqR6e6d4xQpGQxvQWmH9R8s6y6H8q8m4Q5w6e7r8t9y0u",
+    color: "#e84142",
+    explorerUrl: "https://snowtrace.io",
+    enabledByDefault: true,
+    metadata: { network: "mainnet", description: "Avalanche's EVM execution chain" },
+  },
+  {
+    id: "avalanche-fuji-c-chain",
+    name: "Avalanche Fuji C-Chain",
+    shortName: "Fuji",
+    blockchainId: "11111111111111111111111111111111LpoYY",
+    color: "#8c8c8c",
+    explorerUrl: "https://testnet.snowscan.xyz",
+    enabledByDefault: true,
+    metadata: { network: "fuji", description: "Avalanche public test network" },
+  },
+  {
+    id: "beam",
+    name: "Beam",
+    shortName: "Beam",
+    blockchainId: "21Wn5bqW9f5j8d7q2n6Y4w3m5x8p9r0s1t2u3v4w5x6y",
+    color: "#6d5dfc",
+    explorerUrl: "https://subnets.avax.network/beam",
+    enabledByDefault: true,
+    metadata: { network: "mainnet", description: "Gaming-focused Avalanche L1" },
+  },
+  {
+    id: "gunzilla",
+    name: "Gunzilla Games",
+    shortName: "Gunzilla",
+    blockchainId: "2qK8c7n6m5b4v3x2z1a9s8d7f6g5h4j3k2l1p0o9i8u7y",
+    color: "#f05a47",
+    explorerUrl: "https://subnets.avax.network/gunzilla",
+    enabledByDefault: true,
+    metadata: { network: "mainnet", description: "Gaming Avalanche L1" },
+  },
+  {
+    id: "dexalot",
+    name: "Dexalot",
+    shortName: "Dexalot",
+    blockchainId: "6Yt4r3e2w1q9p8o7i6u5y4t3r2e1w9q8p7o6i5u4y3t2",
+    color: "#00b894",
+    explorerUrl: "https://subnets.avax.network/dexalot",
+    enabledByDefault: true,
+    metadata: { network: "mainnet", description: "On-chain central limit order book" },
+  },
+  {
+    id: "defi-kingdoms",
+    name: "DeFi Kingdoms",
+    shortName: "DFK",
+    blockchainId: "3a4s5d6f7g8h9j0k1l2z3x4c5v6b7n8m9q0w1e2r3t4y5",
+    color: "#bd78e8",
+    explorerUrl: "https://subnets.avax.network/defi-kingdoms",
+    enabledByDefault: true,
+    metadata: { network: "mainnet", description: "GameFi Avalanche L1" },
+  },
+  {
+    id: "shrapnel",
+    name: "Shrapnel",
+    shortName: "Shrapnel",
+    blockchainId: "7p6o5i4u3y2t1r0e9w8q7a6s5d4f3g2h1j0k9l8z7x6c5",
+    color: "#ff9f43",
+    explorerUrl: "https://subnets.avax.network/shrapnel",
+    enabledByDefault: false,
+    metadata: { network: "mainnet", description: "Mod-enabled extraction shooter L1" },
+  },
+  {
+    id: "maplestory-universe",
+    name: "MapleStory Universe",
+    shortName: "MSU",
+    blockchainId: "9m8n7b6v5c4x3z2l1k0j9h8g7f6d5s4a3p2o1i0u9y8t7",
+    color: "#4dabf7",
+    explorerUrl: "https://subnets.avax.network/maplestory-universe",
+    enabledByDefault: false,
+    metadata: { network: "mainnet", description: "Digital item-focused Avalanche L1" },
+  },
+]
+
+export function getChainById(id: string): Chain | undefined {
+  return chains.find((chain) => chain.id === id)
+}
