@@ -8,7 +8,7 @@ import type { ICMDataProvider } from "@/lib/providers"
 import type { ICMMessage, MessageBatch } from "@/types"
 import type { Chain } from "@/types"
 
-const MESSAGE_RETENTION_LIMIT = 100
+export const MESSAGE_RETENTION_LIMIT = 50
 const retainedMessagesByKey = new Map<string, Map<string, ICMMessage>>()
 
 function retainMessages(key: string, messages: ICMMessage[]): ICMMessage[] {
@@ -64,7 +64,7 @@ export function useMessages({
     queryFn: async () => {
       const messages = await provider.getRecentMessages({
         chainIds,
-        limit: 100,
+        limit: MESSAGE_RETENTION_LIMIT,
         since: Date.now() - 7 * 24 * 60 * 60 * 1000,
       })
       return retainMessages(queryKey, messages)

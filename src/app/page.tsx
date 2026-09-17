@@ -16,7 +16,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { groupMessages, useMessages } from "@/hooks/useMessages"
+import { groupMessages, MESSAGE_RETENTION_LIMIT, useMessages } from "@/hooks/useMessages"
 
 const queryClient = new QueryClient()
 const defaultFilters: MessageFilterValues = {
@@ -210,10 +210,10 @@ function Visualizer() {
             className="mt-9 h-[115vw] min-h-110 max-h-175 shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:h-[62vw]"
           />
           <div className="w-full my-5">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-end justify-between gap-4">
               <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em] sm:text-2xl">Recent messages</h2>
               <span className="font-mono text-xs text-[#687481]">
-                {visibleMessages.length} of {messages.length} events
+                {MESSAGE_RETENTION_LIMIT} retained · {visibleMessages.length} of {messages.length} events
               </span>
             </div>
             <MessageFilters

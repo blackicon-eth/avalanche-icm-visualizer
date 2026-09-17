@@ -1,8 +1,6 @@
 "use client"
 
-import { motion } from "motion/react"
-import { useAnimation } from "motion/react"
-import { useEffect } from "react"
+import { motion, useAnimationFrame, useMotionValue, useTransform } from "motion/react"
 
 import { getArcPath } from "@/lib/visualization/paths"
 import type { ICMMessage } from "@/types/message"
@@ -27,23 +25,19 @@ export function MessageParticle({
 }: MessageParticleProps) {
   const path = getArcPath(source, destination)
   const color = message.protocol === "teleporter" ? "#f4b860" : "#e84142"
-  const controls = useAnimation()
+  const progress = useMotionValue(0)
+  const speed = useMotionValue(paused ? 0 : 1)
+  const offsetDistance = useTransform(progress, (value) => `${value * 100}%`)
+  const opacity = useTransform(progress, [0, 0.12, 0.78, 1], [0, 1, 1, 0])
+  const scale = useTransform(progress, [0, 0.12, 0.78, 1], [0.7, 1, 1, 0.75])
 
-  useEffect(() => {
-    if (paused) {
-      controls.stop()
-      return
-    }
-
-    void controls.start({
-      offsetDistance: "100%",
-      opacity: [0, 1, 1, 0],
-      scale: [0.7, 1, 1, 0.75],
-      transition: { duration, ease: [0.22, 0.75, 0.35, 1], repeat: Infinity, repeatDelay: 0.4 },
-    })
-
-    return () => controls.stop()
-  }, [controls, duration, paused])
+  useAnimationFrame((_frameTime, delta) => {
+    const smoothing = 1 - Math.exp(-delta / 180)
+    const targetSpeed = paused ? 0 : 1
+    const nextSpeed = speed.get() + (targetSpeed - speed.get()) * smoothing
+    speed.set(nextSpeed)
+    progress.set((progress.get() + (delta / (duration * 1000)) * nextSpeed) % 1)
+  })
 
   return (
     <motion.circle
@@ -51,9 +45,7 @@ export function MessageParticle({
       fill={color}
       stroke="#fff"
       strokeWidth={1}
-      initial={{ offsetDistance: "0%", opacity: 0, scale: 0.7 }}
-      animate={controls}
-      style={{ offsetPath: `path('${path}')`, offsetRotate: "0deg" }}
+      style={{ offsetPath: `path('${path}')`, offsetRotate: "0deg", offsetDistance, opacity, scale }}
       role="button"
       tabIndex={0}
       aria-label={`Animated ${message.protocol} message ${message.id}`}

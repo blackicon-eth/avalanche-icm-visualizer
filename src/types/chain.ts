@@ -3,6 +3,8 @@ export type Chain = {
   name: string
   shortName: string
   blockchainId: string
+  evmChainId?: number
+  nativeToken?: string
   icon?: string
   color?: string
   rpcUrl?: string

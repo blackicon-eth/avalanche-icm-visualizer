@@ -205,6 +205,20 @@ export function NetworkCanvas({
       <div className="pointer-events-none absolute left-6 top-6 font-mono text-xs uppercase tracking-[0.22em] text-[#687382]">
         Network Map
       </div>
+      <div
+        className="pointer-events-none absolute bottom-5 left-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-[#242b34]/80 bg-[#0d1014]/85 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b96a2] backdrop-blur-sm"
+        aria-label="Message protocol legend"
+      >
+        <span className="text-[#687382]">Messages</span>
+        <span className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-[#e84142] shadow-[0_0_8px_#e84142]" />
+          Warp
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-[#f4b860] shadow-[0_0_8px_#f4b860]" />
+          Teleporter
+        </span>
+      </div>
     </div>
   )
 }
