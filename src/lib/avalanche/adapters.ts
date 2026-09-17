@@ -3,7 +3,12 @@ import type { Chain } from "@/types/chain"
 import type { ICMMessage } from "@/types/message"
 import type { ICMDataProvider } from "@/lib/providers"
 import { getExplorerTxUrl, getPublicClient, type AvalanchePublicClient } from "./rpc"
-import { decodeTeleporterLog, normalizeTeleporterMessage, TELEPORTER_ABI } from "./teleporter"
+import {
+  decodeTeleporterDeliveryLog,
+  decodeTeleporterLog,
+  normalizeTeleporterMessage,
+  TELEPORTER_ABI,
+} from "./teleporter"
 import { decodeWarpLog, normalizeWarpMessage, WARP_MESSENGER_ABI } from "./warp"
 
 export type AvalancheChain = Chain & {
@@ -43,10 +48,97 @@ export class AvalancheICMDataProvider implements ICMDataProvider {
         "Unable to fetch live Avalanche messages",
       )
     }
-    return messages
+    const enrichedMessages = await this.attachDeliveryEvidence(messages)
+    return enrichedMessages
       .filter((message) => params.since === undefined || (message.emittedAt ?? 0) >= normalizeTimestamp(params.since))
       .sort((a, b) => ((b.source.blockNumber ?? BigInt(0)) > (a.source.blockNumber ?? BigInt(0)) ? 1 : -1))
       .slice(0, Math.max(0, params.limit ?? 100))
+  }
+
+  private async attachDeliveryEvidence(messages: ICMMessage[]) {
+    const messagesByDestination = new Map<string, ICMMessage[]>()
+    for (const message of messages) {
+      if (message.protocol !== "teleporter" || message.destination.chainId === "unknown") continue
+      const destinationMessages = messagesByDestination.get(message.destination.chainId) ?? []
+      destinationMessages.push(message)
+      messagesByDestination.set(message.destination.chainId, destinationMessages)
+    }
+
+    const updates = await Promise.all(
+      [...messagesByDestination.entries()].map(async ([chainId, destinationMessages]) => {
+        const chain = this.chains.find((item) => item.id === chainId)
+        if (!chain || !chain.teleporterAddress) return []
+        return this.readDeliveryEvents(chain, destinationMessages)
+      }),
+    )
+    const byMessageId = new Map(updates.flat().map((update) => [update.messageId.toLowerCase(), update]))
+
+    return messages.map((message) => {
+      const messageId = message.teleporter?.messageId
+      const update = messageId ? byMessageId.get(messageId.toLowerCase()) : undefined
+      if (!update) return message
+      return {
+        ...message,
+        status: update.status,
+        deliveredAt: update.timestamp,
+        destination: {
+          ...message.destination,
+          txHash: update.txHash,
+          blockNumber: update.blockNumber,
+          timestamp: update.timestamp,
+        },
+        teleporter: { ...message.teleporter, relayerAddress: update.relayerAddress },
+        explorer: {
+          ...message.explorer,
+          destinationTx: update.txHash
+            ? getExplorerTxUrl(
+                this.chains.find((chain) => chain.id === message.destination.chainId)!,
+                update.txHash,
+              )
+            : undefined,
+        },
+      }
+    })
+  }
+
+  private async readDeliveryEvents(chain: AvalancheChain, messages: ICMMessage[]) {
+    const client = getPublicClient(chain, this.rpcUrl)
+    if (!client || !chain.teleporterAddress) return []
+    const latest = await client.getBlockNumber()
+    const fromBlock = latest > this.recentBlockCount ? latest - this.recentBlockCount : BigInt(0)
+    const logs = await client.getLogs({ address: chain.teleporterAddress, fromBlock, toBlock: latest })
+    const messageIds = new Set(
+      messages.flatMap((message) =>
+        message.teleporter?.messageId ? [message.teleporter.messageId.toLowerCase()] : [],
+      ),
+    )
+    const timestamps = await this.readBlockTimestamps(client, logs)
+    const deliveries = new Map<
+      string,
+      {
+        messageId: string
+        status: ICMMessage["status"]
+        relayerAddress?: string
+        txHash?: string
+        blockNumber?: bigint
+        timestamp?: number
+      }
+    >()
+
+    for (const log of logs) {
+      const event = decodeTeleporterDeliveryLog(log)
+      if (!event || !messageIds.has(event.messageId.toLowerCase())) continue
+      const current = deliveries.get(event.messageId.toLowerCase())
+      deliveries.set(event.messageId.toLowerCase(), {
+        messageId: event.messageId,
+        status: event.type === "executed" ? "delivered" : event.type === "failed" ? "failed" : "relaying",
+        relayerAddress: event.type === "received" ? event.relayerAddress : current?.relayerAddress,
+        txHash: log.transactionHash ?? current?.txHash,
+        blockNumber: log.blockNumber ?? current?.blockNumber,
+        timestamp: log.blockNumber == null ? current?.timestamp : timestamps.get(log.blockNumber),
+      })
+    }
+    return [...deliveries.values()]
   }
 
   async getMessage(id: string) {
