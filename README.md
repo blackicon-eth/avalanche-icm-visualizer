@@ -4,8 +4,6 @@ A focused, read-only visualization of Interchain Messaging traffic between Avala
 
 ![Avalanche ICM Visualizer screenshot](public/screenshot.png)
 
-Add the project screenshot at `public/screenshot.png` to display it here.
-
 ## Run locally
 
 ```bash
