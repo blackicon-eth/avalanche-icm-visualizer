@@ -8,6 +8,7 @@ export const chains: Chain[] = [
     blockchainId: "0x0427d4b22a2a78bcddd456742caf91b56badbff985ee19aef14573e7343fd652",
     color: "#e84142",
     explorerUrl: "https://snowtrace.io",
+    rpcUrl: "https://api.avax.network/ext/bc/C/rpc",
     warpMessengerAddress: "0x0200000000000000000000000000000000000005",
     teleporterAddress: "0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf",
     enabledByDefault: true,
