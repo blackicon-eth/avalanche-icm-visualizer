@@ -13,7 +13,14 @@ export type MessageBatchMarkerProps = {
   onClick?: () => void
 }
 
-export function MessageBatchMarker({ batch, source, destination, expanded = false, selected = false, onClick }: MessageBatchMarkerProps) {
+export function MessageBatchMarker({
+  batch,
+  source,
+  destination,
+  expanded = false,
+  selected = false,
+  onClick,
+}: MessageBatchMarkerProps) {
   const control = getControlPoint(source, destination)
   const position = {
     x: (source.x + 2 * control.x + destination.x) / 4,
@@ -40,9 +47,24 @@ export function MessageBatchMarker({ batch, source, destination, expanded = fals
       }}
     >
       <title>{label}</title>
-      <circle r={18} fill="#0d1014" stroke={color} strokeOpacity={selected ? 0.95 : 0.72} strokeWidth={selected ? 2 : 1} />
+      <circle
+        r={18}
+        fill="#0d1014"
+        stroke={color}
+        strokeOpacity={selected ? 0.95 : 0.72}
+        strokeWidth={selected ? 2 : 1}
+      />
       <circle r={13} fill={color} fillOpacity={selected ? 0.24 : 0.14} />
-      <text x="0" y="1" textAnchor="middle" dominantBaseline="middle" fill="#f4f1eb" fontSize="11" fontWeight="700" pointerEvents="none">
+      <text
+        x="0"
+        y="1"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#f4f1eb"
+        fontSize="11"
+        fontWeight="700"
+        pointerEvents="none"
+      >
         ×{batch.messages.length}
       </text>
     </g>

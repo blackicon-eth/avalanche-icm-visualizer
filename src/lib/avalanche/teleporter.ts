@@ -19,17 +19,26 @@ export const TELEPORTER_ABI = [
           { name: "destinationAddress", type: "address" },
           { name: "requiredGasLimit", type: "uint256" },
           { name: "allowedRelayerAddresses", type: "address[]" },
-          { name: "receipts", type: "tuple[]", components: [
-            { name: "receivedMessageNonce", type: "uint256" },
-            { name: "relayerRewardAddress", type: "address" },
-          ] },
+          {
+            name: "receipts",
+            type: "tuple[]",
+            components: [
+              { name: "receivedMessageNonce", type: "uint256" },
+              { name: "relayerRewardAddress", type: "address" },
+            ],
+          },
           { name: "message", type: "bytes" },
         ],
       },
-      { indexed: false, name: "feeInfo", type: "tuple", components: [
-        { name: "feeTokenAddress", type: "address" },
-        { name: "amount", type: "uint256" },
-      ] },
+      {
+        indexed: false,
+        name: "feeInfo",
+        type: "tuple",
+        components: [
+          { name: "feeTokenAddress", type: "address" },
+          { name: "amount", type: "uint256" },
+        ],
+      },
     ],
   },
 ] as const
@@ -92,7 +101,12 @@ export function normalizeTeleporterMessage(input: {
   return {
     id: input.id,
     protocol: "teleporter",
-    source: { chainId: input.sourceChainId, txHash: input.txHash, blockNumber: input.blockNumber, timestamp: emittedAt },
+    source: {
+      chainId: input.sourceChainId,
+      txHash: input.txHash,
+      blockNumber: input.blockNumber,
+      timestamp: emittedAt,
+    },
     destination: { chainId: input.destinationChainId ?? "unknown" },
     status: "observed",
     emittedAt,

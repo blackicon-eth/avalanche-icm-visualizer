@@ -1,9 +1,4 @@
-import {
-  createPublicClient,
-  http,
-  type PublicClient,
-  type Transport,
-} from "viem"
+import { createPublicClient, http, type PublicClient, type Transport } from "viem"
 import type { Chain } from "@/types/chain"
 import { env } from "@/lib/config/env"
 

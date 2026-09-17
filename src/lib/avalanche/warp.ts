@@ -63,7 +63,12 @@ export function normalizeWarpMessage(input: {
   return {
     id: input.id,
     protocol: "warp",
-    source: { chainId: input.sourceChainId, txHash: input.txHash, blockNumber: input.blockNumber, timestamp: emittedAt },
+    source: {
+      chainId: input.sourceChainId,
+      txHash: input.txHash,
+      blockNumber: input.blockNumber,
+      timestamp: emittedAt,
+    },
     destination: { chainId: "unknown" },
     status: "observed",
     emittedAt,

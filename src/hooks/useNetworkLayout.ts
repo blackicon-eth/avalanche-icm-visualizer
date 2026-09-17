@@ -51,18 +51,18 @@ export function useNetworkDimensions(
     const update = () => {
       const elementSize = getElementSize(element)
       const viewportSize = getViewportSize()
-      setSize(resolveSize(
-        width ?? elementSize?.width ?? viewportSize.width,
-        height ?? elementSize?.height ?? viewportSize.height,
-      ))
+      setSize(
+        resolveSize(
+          width ?? elementSize?.width ?? viewportSize.width,
+          height ?? elementSize?.height ?? viewportSize.height,
+        ),
+      )
     }
 
     update()
     if (typeof window === "undefined") return
 
-    const observer = element && typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(update)
-      : null
+    const observer = element && typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null
     if (observer && element) observer.observe(element)
     window.addEventListener("resize", update)
 
@@ -90,9 +90,7 @@ export function useNetworkLayout(
   options: Omit<NetworkLayoutOptions, "enabledChainIds"> = {},
 ): ChainPosition[] {
   const isOptions = !Array.isArray(chainIdsOrOptions)
-  const objectOptions = isOptions
-    ? (chainIdsOrOptions as NetworkLayoutOptions & { chainIds: LayoutInput })
-    : null
+  const objectOptions = isOptions ? (chainIdsOrOptions as NetworkLayoutOptions & { chainIds: LayoutInput }) : null
   const chainIds: LayoutInput = objectOptions?.chainIds ?? (chainIdsOrOptions as LayoutInput)
   const layoutOptions: Omit<NetworkLayoutOptions, "enabledChainIds"> = objectOptions ?? options
   const enabled = objectOptions?.enabledChainIds ?? enabledChainIds

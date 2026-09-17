@@ -18,11 +18,7 @@ export function getRadialPosition(
   height: number,
   radius?: number,
 ): Point
-export function getRadialPosition(
-  index: number,
-  chainCount: number,
-  dimensions: RadialLayoutDimensions,
-): Point
+export function getRadialPosition(index: number, chainCount: number, dimensions: RadialLayoutDimensions): Point
 export function getRadialPosition(
   index: number,
   chainCount: number,
@@ -54,11 +50,7 @@ export function getRadialPosition(
   }
 }
 
-export function getControlPoint(
-  source: Point,
-  destination: Point,
-  curvature = 0.2,
-): Point {
+export function getControlPoint(source: Point, destination: Point, curvature = 0.2): Point {
   const midpoint = {
     x: (source.x + destination.x) / 2,
     y: (source.y + destination.y) / 2,
@@ -78,11 +70,7 @@ export function getControlPoint(
   }
 }
 
-export function getArcPath(
-  source: Point,
-  destination: Point,
-  curvature = 0.2,
-): string {
+export function getArcPath(source: Point, destination: Point, curvature = 0.2): string {
   const controlPoint = getControlPoint(source, destination, curvature)
   return `M ${source.x} ${source.y} Q ${controlPoint.x} ${controlPoint.y} ${destination.x} ${destination.y}`
 }

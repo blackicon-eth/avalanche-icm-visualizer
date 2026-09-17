@@ -1,9 +1,6 @@
 import { z } from "zod"
 
-const optionalUrl = z.preprocess(
-  (value) => (value === "" ? undefined : value),
-  z.url().optional(),
-)
+const optionalUrl = z.preprocess((value) => (value === "" ? undefined : value), z.url().optional())
 
 const serverEnvSchema = z.object({
   AVALANCHE_RPC_URL: optionalUrl,

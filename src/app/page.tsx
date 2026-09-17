@@ -7,16 +7,20 @@ import { chains } from "@/data/chains"
 import { AddChainDialog } from "@/components/chains/AddChainDialog"
 import { readCustomChains, writeCustomChains } from "@/components/chains/chainStorage"
 import { NetworkCanvas } from "@/components/network/NetworkCanvas"
-import { NetworkLegend } from "@/components/network/NetworkLegend"
 import { MessageDetails } from "@/components/messages/MessageDetails"
 import { MessageList } from "@/components/messages/MessageList"
 import { MessageFilters, type MessageFilterValues } from "@/components/ui/MessageFilters"
-import type { AnimationSpeed } from "@/hooks/useAnimationClock"
 import { groupMessages, useMessages } from "@/hooks/useMessages"
 import type { Chain } from "@/types"
 
 const queryClient = new QueryClient()
-const defaultFilters: MessageFilterValues = { protocol: "all", status: "all", time: "all", source: "all", destination: "all" }
+const defaultFilters: MessageFilterValues = {
+  protocol: "all",
+  status: "all",
+  time: "all",
+  source: "all",
+  destination: "all",
+}
 const protocolValues = ["all", "warp", "teleporter", "unknown"] as const
 const statusValues = ["all", "observed", "relaying", "delivered", "failed"] as const
 const timeValues = ["all", "hour", "day", "week"] as const
@@ -38,7 +42,6 @@ function Visualizer() {
   const pathname = usePathname()
   const params = useSearchParams()
   const [paused, setPaused] = useState(false)
-  const [speed, setSpeed] = useState<AnimationSpeed>(1)
   const [customChains, setCustomChains] = useState<Chain[]>(() => readCustomChains())
   const [addChainOpen, setAddChainOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
@@ -46,11 +49,16 @@ function Visualizer() {
     const interval = setInterval(() => setNow(Date.now()), 5000)
     return () => clearInterval(interval)
   }, [])
-  const allChains = useMemo(() => [...chains, ...customChains.filter((custom) => !chains.some((chain) => chain.id === custom.id))], [customChains])
+  const allChains = useMemo(
+    () => [...chains, ...customChains.filter((custom) => !chains.some((chain) => chain.id === custom.id))],
+    [customChains],
+  )
   const enabledChainIds = useMemo(() => {
     const chainsParam = params.get("chains")
     const fromUrl = chainsParam?.split(",").filter((id) => allChains.some((chain) => chain.id === id))
-    return fromUrl && (fromUrl.length > 0 || chainsParam === "") ? fromUrl : allChains.filter((chain) => chain.enabledByDefault).map((chain) => chain.id)
+    return fromUrl && (fromUrl.length > 0 || chainsParam === "")
+      ? fromUrl
+      : allChains.filter((chain) => chain.enabledByDefault).map((chain) => chain.id)
   }, [allChains, params])
   const protocol = params.get("protocol")
   const status = params.get("status")
@@ -62,25 +70,40 @@ function Visualizer() {
     source: params.get("source") || defaultFilters.source,
     destination: params.get("destination") || defaultFilters.destination,
   }
-  const { messages, isLoading, isError, refetch } = useMessages({ chainIds: enabledChainIds, paused, chains: allChains })
+  const { messages, isLoading, isError, refetch } = useMessages({
+    chainIds: enabledChainIds,
+    paused,
+    chains: allChains,
+  })
   const visibleMessages = messages.filter((message) => {
     const age = now - (message.emittedAt ?? 0)
-    return enabledChainIds.includes(message.source.chainId) && enabledChainIds.includes(message.destination.chainId) &&
+    return (
+      enabledChainIds.includes(message.source.chainId) &&
+      enabledChainIds.includes(message.destination.chainId) &&
       (filters.protocol === "all" || message.protocol === filters.protocol) &&
       (filters.status === "all" || message.status === filters.status) &&
       (filters.source === "all" || message.source.chainId === filters.source) &&
       (filters.destination === "all" || message.destination.chainId === filters.destination) &&
-      (filters.time === "all" || (filters.time === "hour" ? age <= 3600000 : filters.time === "day" ? age <= 86400000 : age <= 604800000))
+      (filters.time === "all" ||
+        (filters.time === "hour" ? age <= 3600000 : filters.time === "day" ? age <= 86400000 : age <= 604800000))
+    )
   })
   const visibleBatches = useMemo(() => groupMessages(visibleMessages), [visibleMessages])
   const selectedMessage = messages.find((message) => message.id === params.get("message")) ?? null
   const updateParams = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params.toString())
-    Object.entries(updates).forEach(([key, value]) => key === "chains" && value !== undefined ? next.set(key, value) : value && value !== "all" ? next.set(key, value) : next.delete(key))
+    Object.entries(updates).forEach(([key, value]) =>
+      key === "chains" && value !== undefined
+        ? next.set(key, value)
+        : value && value !== "all"
+          ? next.set(key, value)
+          : next.delete(key),
+    )
     router.replace(`${pathname}?${next.toString()}`, { scroll: false })
   }
   const setChains = (ids: string[]) => updateParams({ chains: ids.join(",") })
-  const toggleChain = (id: string) => setChains(enabledChainIds.includes(id) ? enabledChainIds.filter((item) => item !== id) : [...enabledChainIds, id])
+  const toggleChain = (id: string) =>
+    setChains(enabledChainIds.includes(id) ? enabledChainIds.filter((item) => item !== id) : [...enabledChainIds, id])
   const addChain = (chain: Chain) => {
     const next = [...customChains.filter((item) => item.id !== chain.id), chain]
     setCustomChains(next)
@@ -88,29 +111,181 @@ function Visualizer() {
     setChains([...enabledChainIds, chain.id])
   }
 
-  return <main className="min-h-screen bg-background text-foreground">
-     <header className="site-header"><div><p className="eyebrow">AVALANCHE / INTERCHAIN MESSAGING</p><h1>ICM <span>Visualizer</span></h1></div><div className="header-meta"><span className={`status-light ${paused ? "is-paused" : ""}`} /><span>{paused ? "PAUSED" : "LIVE PROVIDER"}</span></div></header>
-    <div className="workspace">
-      <aside className="control-rail">
-         <div className="rail-heading"><div><p className="eyebrow">01 / NETWORKS</p><h2>Active chains</h2></div><span className="count-badge">{enabledChainIds.length}/{allChains.length}</span></div>
-         <div className="chain-toggles">{allChains.map((chain) => <label key={chain.id} className="chain-toggle"><input type="checkbox" checked={enabledChainIds.includes(chain.id)} onChange={() => toggleChain(chain.id)} /><span className="checkbox" /><span className="chain-dot" style={{ backgroundColor: chain.color }} /><span className="chain-label"><strong>{chain.shortName}</strong><small>{chain.metadata?.network}</small></span></label>)}</div>
-         <button type="button" className="pause-button" onClick={() => setAddChainOpen(true)}><span>+</span>Add custom chain</button>
-         <AddChainDialog open={addChainOpen} onOpenChange={setAddChainOpen} onAdd={addChain} />
-        <div className="rail-divider" />
-        <div className="rail-heading"><div><p className="eyebrow">02 / SIGNAL</p><h2>Motion control</h2></div></div>
-        <button className="pause-button" type="button" onClick={() => setPaused((value) => !value)}><span>{paused ? "▶" : "Ⅱ"}</span>{paused ? "Resume network" : "Pause network"}</button>
-        <div className="speed-row"><span>Playback speed</span><div>{([0.5, 1, 2, 4] as AnimationSpeed[]).map((value) => <button key={value} type="button" className={speed === value ? "selected" : ""} onClick={() => setSpeed(value)}>{value}×</button>)}</div></div>
-        <div className="rail-divider" />
-         <div className="rail-foot"><span className="eyebrow">STREAM HEALTH</span><strong>{isError ? "Connection issue" : "Awaiting RPC traffic"}</strong><small>Live provider is read-only and uses configured RPC endpoints.</small></div>
-      </aside>
-      <section className="network-column"><div className="section-intro"><div><p className="eyebrow">NETWORK TOPOLOGY</p><h2>Messages in motion</h2><p>Independent Avalanche L1s, connected by observed ICM traffic.</p></div><div className="telemetry"><strong>{visibleMessages.length.toString().padStart(2, "0")}</strong><span>visible events</span></div></div>
-            <NetworkCanvas chains={allChains} enabledChainIds={enabledChainIds} messages={visibleMessages} batches={visibleBatches} paused={paused} speed={speed} onPausedChange={setPaused} onSpeedChange={setSpeed} selectedMessageId={selectedMessage?.id} onMessageClick={(message) => updateParams({ message: message.id })} className="network-hero" />
-         <div className="network-caption"><NetworkLegend /><span>{visibleBatches.length} active routes · click a particle to inspect the evidence trail</span></div>
-         <div className="activity-section"><div className="activity-heading"><div><p className="eyebrow">03 / ACTIVITY LOG</p><h2>Recent messages</h2></div><span>{visibleMessages.length} of {messages.length} events</span></div><MessageFilters value={filters} onChange={(next) => updateParams({ protocol: next.protocol, status: next.status, time: next.time, source: next.source, destination: next.destination })} chains={allChains} className="filter-bar" />{isLoading ? <div className="state-panel"><span className="loader" />Loading network events…</div> : isError ? <div className="state-panel"><strong>Unable to load ICM data.</strong><button type="button" onClick={() => refetch()}>Retry connection</button></div> : !visibleMessages.length ? <div className="state-panel"><strong>No messages match your current filters.</strong><span>Try enabling another chain or removing a filter.</span></div> : <MessageList messages={visibleMessages} chains={allChains} selectedMessageId={selectedMessage?.id} onSelectMessage={(message) => updateParams({ message: message.id })} />}</div>
-      </section>
-    </div>
-      <MessageDetails message={selectedMessage} chains={allChains} onClose={() => updateParams({ message: undefined })} />
-  </main>
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="flex min-h-26 items-center justify-between gap-6 border-b border-border bg-[#080a0d]/86 px-6 py-6">
+        <div className="flex items-center gap-4">
+          <svg className="h-12 w-12 shrink-0" viewBox="0 0 64 64" role="img" aria-label="Avalanche logo">
+            <rect width="64" height="64" rx="14" fill="#0d1014" stroke="#303944" />
+            <path d="M32 10 49 48H39l-3.2-8H27l-3 8H14l18-38Zm0 14-3.4 9h6.8L32 24Z" fill="#e84142" />
+            <circle cx="50" cy="14" r="4" fill="#f4b860" />
+          </svg>
+          <div>
+            <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
+              Avalanche / Interchain Messaging
+            </p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-[-.04em]">
+              ICM <span className="font-medium text-[#9ba5b0]">Visualizer</span>
+            </h1>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 font-mono text-xs font-medium uppercase tracking-widest text-[#95a0ad]">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${paused ? "bg-[#d59d4e] shadow-[0_0_12px_#d59d4e]" : "bg-[#4ce0a0] shadow-[0_0_12px_#4ce0a0]"}`}
+          />
+          <span>{paused ? "Paused" : "Live"}</span>
+        </div>
+      </header>
+      <div className="grid min-h-[calc(100vh-104px)] grid-cols-1 lg:grid-cols-[292px_minmax(0,1fr)]">
+        <aside className="border-b border-border bg-[#0a0d11]/62 px-5 py-8 sm:px-6.5 lg:border-b-0 lg:border-r lg:py-10.5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
+                01 / Networks
+              </p>
+              <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em]">Active chains</h2>
+            </div>
+            <span className="pt-0.5 font-mono text-[13px] text-[#8b96a2]">
+              {enabledChainIds.length}/{allChains.length}
+            </span>
+          </div>
+          <div className="mt-7 grid gap-1.5">
+            {allChains.map((chain) => (
+              <label
+                key={chain.id}
+                className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-3 text-sm text-[#aab3bd] transition-colors hover:bg-[#151b21]"
+              >
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={enabledChainIds.includes(chain.id)}
+                  onChange={() => toggleChain(chain.id)}
+                />
+                <span className="h-4 w-4 rounded border border-[#46515e] peer-checked:border-[#e84142] peer-checked:bg-[#e84142] peer-checked:shadow-[inset_0_0_0_3px_#11151a]" />
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chain.color }} />
+                <span className="grid gap-0.5">
+                  <strong>{chain.shortName}</strong>
+                  <small className="font-mono text-[10px] uppercase text-[#64707d]">{chain.metadata?.network}</small>
+                </span>
+              </label>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="mt-4 flex w-full items-center gap-3 rounded-md border border-[#303944] bg-[#141a20] p-3.5 text-left text-sm text-[#dce1e6] hover:border-[#e84142] hover:text-white"
+            onClick={() => setAddChainOpen(true)}
+          >
+            <span className="font-mono text-sm text-[#e84142]">+</span>Add custom chain
+          </button>
+          <AddChainDialog open={addChainOpen} onOpenChange={setAddChainOpen} onAdd={addChain} />
+          <div className="my-8 h-px bg-border" />
+          <div>
+            <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
+              02 / Signal
+            </p>
+            <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em]">Motion control</h2>
+          </div>
+          <button
+            className="mt-5 flex w-full items-center gap-3 rounded-md border border-[#303944] bg-[#141a20] p-3.5 text-left text-sm text-[#dce1e6] hover:border-[#e84142] hover:text-white"
+            type="button"
+            onClick={() => setPaused((value) => !value)}
+          >
+            <span className="w-4 font-mono text-sm text-[#e84142]">{paused ? "▶" : "Ⅱ"}</span>
+            {paused ? "Resume network" : "Pause network"}
+          </button>
+          <div className="my-8 h-px bg-border" />
+          <div className="grid gap-2.5">
+            <span className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
+              Stream health
+            </span>
+            <strong className="text-sm font-semibold">{isError ? "Connection issue" : "Awaiting RPC traffic"}</strong>
+            <small className="text-xs leading-relaxed text-[#687481]">
+              Live provider is read-only and uses configured RPC endpoints.
+            </small>
+          </div>
+        </aside>
+        <section className="min-w-0 px-10">
+          <NetworkCanvas
+            chains={allChains}
+            enabledChainIds={enabledChainIds}
+            messages={visibleMessages}
+            batches={visibleBatches}
+            paused={paused}
+            onPausedChange={setPaused}
+            selectedMessageId={selectedMessage?.id}
+            onMessageClick={(message) => updateParams({ message: message.id })}
+            className="mt-9 h-[115vw] min-h-110 max-h-175 shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:h-[62vw]"
+          />
+          <div className="w-full my-5">
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em] sm:text-2xl">Recent messages</h2>
+              <span className="font-mono text-xs text-[#687481]">
+                {visibleMessages.length} of {messages.length} events
+              </span>
+            </div>
+            <MessageFilters
+              value={filters}
+              onChange={(next) =>
+                updateParams({
+                  protocol: next.protocol,
+                  status: next.status,
+                  time: next.time,
+                  source: next.source,
+                  destination: next.destination,
+                })
+              }
+              chains={allChains}
+              className="my-7 rounded-lg border border-border bg-[#10151a]/70 p-4 sm:p-5"
+            />
+            {isLoading ? (
+              <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-[#303944] px-6 py-14 text-sm text-[#84909c]">
+                <span className="h-[15px] w-[15px] animate-spin rounded-full border-2 border-[#39434e] border-t-[#e84142]" />
+                Loading network events...
+              </div>
+            ) : isError ? (
+              <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-[#303944] px-6 py-14 text-sm text-[#84909c]">
+                <strong className="text-[#c6ced6]">Unable to load ICM data.</strong>
+                <button type="button" className="text-[#e84142] underline" onClick={() => refetch()}>
+                  Retry connection
+                </button>
+              </div>
+            ) : !visibleMessages.length ? (
+              <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-[#303944] px-6 py-14 text-sm text-[#84909c]">
+                <strong className="text-[#c6ced6]">No messages match your current filters.</strong>
+                <span>Try enabling another chain or removing a filter.</span>
+              </div>
+            ) : (
+              <MessageList
+                messages={visibleMessages}
+                chains={allChains}
+                selectedMessageId={selectedMessage?.id}
+                onSelectMessage={(message) => updateParams({ message: message.id })}
+              />
+            )}
+          </div>
+        </section>
+      </div>
+      <MessageDetails
+        message={selectedMessage}
+        chains={allChains}
+        onClose={() => updateParams({ message: undefined })}
+      />
+    </main>
+  )
 }
 
-export default function Home() { return <QueryClientProvider client={queryClient}><Suspense fallback={<div className="page-loading">Loading network observatory…</div>}><Visualizer /></Suspense></QueryClientProvider> }
+export default function Home() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Suspense
+        fallback={
+          <div className="grid min-h-screen place-items-center bg-background font-mono text-xs uppercase tracking-[.12em] text-[#7f8995]">
+            Loading network observatory...
+          </div>
+        }
+      >
+        <Visualizer />
+      </Suspense>
+    </QueryClientProvider>
+  )
+}
