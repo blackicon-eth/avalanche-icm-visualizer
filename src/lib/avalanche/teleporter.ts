@@ -8,21 +8,42 @@ export const TELEPORTER_ABI = [
     inputs: [
       { indexed: true, name: "messageID", type: "bytes32" },
       { indexed: true, name: "destinationBlockchainID", type: "bytes32" },
-      { indexed: true, name: "destinationAddress", type: "address" },
-      { indexed: false, name: "message", type: "bytes" },
-      { indexed: false, name: "requiredGasLimit", type: "uint256" },
       {
         indexed: false,
-        name: "feeInfo",
+        name: "message",
         type: "tuple",
         components: [
-          { name: "feeTokenAddress", type: "address" },
-          { name: "amount", type: "uint256" },
+          { name: "messageNonce", type: "uint256" },
+          { name: "originSenderAddress", type: "address" },
+          { name: "destinationBlockchainID", type: "bytes32" },
+          { name: "destinationAddress", type: "address" },
+          { name: "requiredGasLimit", type: "uint256" },
+          { name: "allowedRelayerAddresses", type: "address[]" },
+          { name: "receipts", type: "tuple[]", components: [
+            { name: "receivedMessageNonce", type: "uint256" },
+            { name: "relayerRewardAddress", type: "address" },
+          ] },
+          { name: "message", type: "bytes" },
         ],
       },
+      { indexed: false, name: "feeInfo", type: "tuple", components: [
+        { name: "feeTokenAddress", type: "address" },
+        { name: "amount", type: "uint256" },
+      ] },
     ],
   },
 ] as const
+
+export type TeleporterMessage = {
+  messageNonce: bigint
+  originSenderAddress: Address
+  destinationBlockchainID: Hex
+  destinationAddress: Address
+  requiredGasLimit: bigint
+  allowedRelayerAddresses: Address[]
+  receipts: Array<{ receivedMessageNonce: bigint; relayerRewardAddress: Address }>
+  message: Hex
+}
 
 export type TeleporterEvent = {
   messageId: Hex
@@ -37,16 +58,19 @@ export function decodeTeleporterLog(log: Log): TeleporterEvent | null {
   try {
     const decoded = decodeEventLog({ abi: TELEPORTER_ABI, data: log.data, topics: log.topics })
     if (decoded.eventName !== "SendCrossChainMessage") return null
-    const args = decoded.args as TeleporterEvent & {
+    const args = decoded.args as {
       messageID: Hex
       destinationBlockchainID: Hex
+      message: TeleporterMessage
+      feeInfo: unknown
     }
+    const message = args.message
     return {
       messageId: args.messageID,
       destinationBlockchainId: args.destinationBlockchainID,
-      destinationAddress: args.destinationAddress,
-      message: args.message,
-      requiredGasLimit: args.requiredGasLimit,
+      destinationAddress: message.destinationAddress,
+      message: message.message,
+      requiredGasLimit: message.requiredGasLimit,
       feeInfo: args.feeInfo,
     }
   } catch {

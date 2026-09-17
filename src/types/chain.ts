@@ -7,6 +7,8 @@ export type Chain = {
   color?: string
   rpcUrl?: string
   explorerUrl?: string
+  warpMessengerAddress?: `0x${string}`
+  teleporterAddress?: `0x${string}`
   enabledByDefault: boolean
   metadata?: {
     description?: string
