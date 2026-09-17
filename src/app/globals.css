@@ -1,6 +1,32 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.accordion-content[data-state="open"] {
+  animation: accordion-down 220ms ease-out;
+}
+
+.accordion-content[data-state="closed"] {
+  animation: accordion-up 180ms ease-out;
+}
+
 @theme inline {
   --font-sans: "Manrope", sans-serif;
   --font-mono: "DM Mono", monospace;

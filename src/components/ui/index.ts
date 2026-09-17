@@ -1,4 +1,5 @@
 export { FilterSelect } from "./FilterSelect"
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./accordion"
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 export {
   Pagination,

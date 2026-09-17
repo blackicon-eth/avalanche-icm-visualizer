@@ -1,22 +1,13 @@
 "use client"
 
 import { AnimatePresence, motion } from "motion/react"
+import { Check, Copy, ExternalLink } from "lucide-react"
 import type { Chain, ICMMessage } from "@/types"
 import { getExplorerTxUrl } from "@/lib/avalanche/rpc"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { MessageStatus } from "./MessageStatus"
 import { MessageTimeline } from "./MessageTimeline"
 import { useEffect, useRef, useState } from "react"
-
-function display(value: unknown) {
-  if (typeof value === "bigint") return value.toString()
-  if (typeof value === "string") return value
-  if (value == null) return "Not recorded"
-  try {
-    return JSON.stringify(value, (_, item) => (typeof item === "bigint" ? item.toString() : item), 2)
-  } catch {
-    return String(value)
-  }
-}
 
 function short(value?: string) {
   return value ? `${value.slice(0, 12)}…${value.slice(-10)}` : "Not recorded"
@@ -35,20 +26,46 @@ function CopyButton({ value, label = "Copy" }: { value?: string; label?: string 
         setCopied(true)
         window.setTimeout(() => setCopied(false), 1400)
       }}
-      className="rounded-md border border-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition hover:border-foreground/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+      title={copied ? "Copied" : label}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-foreground/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
     >
-      {copied ? "Copied" : label}
+      {copied ? (
+        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
     </button>
   )
 }
 
-function Field({ label, value, copyValue }: { label: string; value?: string; copyValue?: string }) {
+function Field({
+  label,
+  value,
+  copyValue,
+  linkHref,
+}: {
+  label: string
+  value?: string
+  copyValue?: string
+  linkHref?: string
+}) {
   return (
     <div className="min-w-0">
       <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <div className="mt-2 flex items-start gap-2">
         <p className="min-w-0 break-all text-sm leading-6">{value || "Not recorded"}</p>
         {copyValue && <CopyButton value={copyValue} />}
+        {linkHref && (
+          <a
+            href={linkHref}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Open ${label}`}
+            className="shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+          </a>
+        )}
       </div>
     </div>
   )
@@ -57,7 +74,6 @@ function Field({ label, value, copyValue }: { label: string; value?: string; cop
 export type MessageDetailsProps = { message?: ICMMessage | null; chains?: Chain[]; onClose?: () => void }
 
 export function MessageDetails({ message, chains, onClose }: MessageDetailsProps) {
-  const [open, setOpen] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const source = chains?.find((chain) => chain.id === message?.source.chainId)
   const destination = chains?.find((chain) => chain.id === message?.destination.chainId)
@@ -82,14 +98,14 @@ export function MessageDetails({ message, chains, onClose }: MessageDetailsProps
     <AnimatePresence>
       {message && (
         <motion.aside
-          initial={{ opacity: 0, x: 32 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 32 }}
-          transition={{ duration: 0.22, ease: "easeOut" }}
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", stiffness: 360, damping: 36, mass: 0.8 }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="message-details-title"
-          className="fixed inset-y-0 right-0 z-40 flex w-full max-w-xl flex-col border-l border-border bg-background shadow-2xl shadow-black/10 sm:w-[min(92vw,34rem)]"
+          className="fixed inset-y-0 right-0 z-40 flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl shadow-black/10 sm:w-[min(94vw,42rem)]"
         >
           <header className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div>
@@ -110,7 +126,7 @@ export function MessageDetails({ message, chains, onClose }: MessageDetailsProps
           </header>
           <div className="flex-1 space-y-7 overflow-y-auto px-6 py-6">
             <div className="flex flex-wrap items-center gap-2">
-              <MessageStatus status={message.status} />
+              <MessageStatus status={message.status} compact />
               <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {message.protocol}
               </span>
@@ -118,99 +134,45 @@ export function MessageDetails({ message, chains, onClose }: MessageDetailsProps
             <div className="grid grid-cols-2 gap-5">
               <Field label="Source" value={source?.name ?? message.source.chainId} />
               <Field label="Destination" value={destination?.name ?? message.destination.chainId} />
-              <Field
-                label="Source transaction"
-                value={short(message.source.txHash)}
-                copyValue={message.source.txHash}
-              />
+              <Field label="Source transaction" value={short(message.source.txHash)} linkHref={sourceTx} />
               <Field
                 label="Destination transaction"
                 value={short(message.destination.txHash)}
-                copyValue={message.destination.txHash}
+                linkHref={destinationTx}
               />
             </div>
             <MessageTimeline message={message} />
-            <div className="border-t border-border pt-5">
-              <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                aria-expanded={open}
-                className="flex w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50"
-              >
-                <span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    Technical record
+            <Accordion type="single" collapsible>
+              <AccordionItem value="technical-record">
+                <AccordionTrigger>
+                  <span>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                      Technical record
+                    </span>
+                    <span className="mt-1 block text-sm font-medium">Protocol ID & payload</span>
                   </span>
-                  <span className="mt-1 block text-sm font-medium">Protocol identifiers & payload</span>
-                </span>
-                <span className="text-muted-foreground" aria-hidden="true">
-                  {open ? "−" : "+"}
-                </span>
-              </button>
-              {open && (
-                <div className="mt-5 space-y-5">
-                  <div className="grid grid-cols-2 gap-5">
-                    <Field label="Message ID" value={message.id} copyValue={message.id} />
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-5">
                     <Field
                       label="Warp / Teleporter ID"
                       value={message.warp?.messageId ?? message.teleporter?.messageId}
-                      copyValue={message.warp?.messageId ?? message.teleporter?.messageId}
                     />
-                    <Field label="Source tx hash" value={message.source.txHash} copyValue={message.source.txHash} />
-                    <Field
-                      label="Destination tx hash"
-                      value={message.destination.txHash}
-                      copyValue={message.destination.txHash}
-                    />
-                    <Field label="Relayer" value={message.teleporter?.relayerAddress} />
-                  </div>
-                  <Field label="Payload type" value={message.payload.type} />
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                        Raw payload
-                      </p>
-                      <CopyButton value={message.payload.raw} />
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                          Raw payload
+                        </p>
+                        <CopyButton value={message.payload.raw} />
+                      </div>
+                      <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-muted p-3 font-mono text-[11px] leading-5">
+                        {message.payload.raw ?? "Not recorded"}
+                      </pre>
                     </div>
-                    <pre className="mt-2 max-h-36 overflow-auto rounded-lg bg-muted p-3 font-mono text-[11px] leading-5">
-                      {message.payload.raw ?? "Not recorded"}
-                    </pre>
                   </div>
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      Decoded payload
-                    </p>
-                    <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-muted p-3 font-mono text-[11px] leading-5">
-                      {display(message.payload.decoded)}
-                    </pre>
-                  </div>
-                </div>
-              )}
-            </div>
-            {sourceTx || destinationTx ? (
-              <div className="flex flex-wrap gap-3 border-t border-border pt-5">
-                {sourceTx && (
-                  <a
-                    href={sourceTx}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-medium underline decoration-border underline-offset-4 hover:decoration-foreground"
-                  >
-                    Open source transaction ↗
-                  </a>
-                )}
-                {destinationTx && (
-                  <a
-                    href={destinationTx}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-medium underline decoration-border underline-offset-4 hover:decoration-foreground"
-                  >
-                    Open destination transaction ↗
-                  </a>
-                )}
-              </div>
-            ) : null}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </motion.aside>
       )}
