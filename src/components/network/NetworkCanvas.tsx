@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react"
 
 import { useAnimationClock, type AnimationSpeed } from "@/hooks/useAnimationClock"
-import { useNetworkLayout } from "@/hooks/useNetworkLayout"
+import { useNetworkDimensions, useNetworkLayout } from "@/hooks/useNetworkLayout"
 import { ChainNode } from "@/components/network/ChainNode"
 import { MessageArc } from "@/components/network/MessageArc"
 import { MessageParticle } from "@/components/network/MessageParticle"
@@ -49,8 +49,8 @@ export function NetworkCanvas({
   enabledChainIds,
   selectedMessageId,
   selectedChainId,
-  width = DEFAULT_WIDTH,
-  height = DEFAULT_HEIGHT,
+  width,
+  height,
   paused,
   speed,
   maxAnimatedMessages = DEFAULT_ANIMATION_CAP,
@@ -62,13 +62,13 @@ export function NetworkCanvas({
 }: NetworkCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const clock = useAnimationClock({ paused, speed })
+  const dimensions = useNetworkDimensions(containerRef, width, height, DEFAULT_WIDTH, DEFAULT_HEIGHT)
   const positions = useNetworkLayout({
     chainIds: chains.map((chain) => chain.id),
     enabledChainIds,
-    width,
-    height,
-    containerRef,
-    radius: Math.min(width, height) * 0.35,
+    width: dimensions.width,
+    height: dimensions.height,
+    radius: Math.min(dimensions.width, dimensions.height) * 0.35,
     angleOffset: -Math.PI / 2,
   })
   const byId = positionMap(positions)
@@ -104,7 +104,7 @@ export function NetworkCanvas({
 
   return (
     <div ref={containerRef} className={`relative min-h-[360px] w-full overflow-hidden rounded-xl border border-[#242b34] bg-[#0d1014] ${className ?? ""}`}>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-full min-h-[360px] w-full" role="img" aria-labelledby="network-title network-description">
+      <svg viewBox={`0 0 ${dimensions.width} ${dimensions.height}`} className="h-full min-h-[360px] w-full" role="img" aria-labelledby="network-title network-description">
         <title id="network-title">Avalanche interchain message network</title>
         <desc id="network-description">Avalanche L1 chains arranged radially with recent ICM messages travelling between them.</desc>
         <defs>
@@ -113,7 +113,7 @@ export function NetworkCanvas({
             <stop offset="1" stopColor="#e84142" stopOpacity="0" />
           </radialGradient>
         </defs>
-        <circle cx={width / 2} cy={height / 2} r={Math.min(width, height) * 0.23} fill="url(#network-core-glow)" />
+        <circle cx={dimensions.width / 2} cy={dimensions.height / 2} r={Math.min(dimensions.width, dimensions.height) * 0.23} fill="url(#network-core-glow)" />
         <g className="connections" aria-label="Active message connections">
            {animatedBatches.map((batch) => {
              const source = byId.get(batch.sourceChainId)

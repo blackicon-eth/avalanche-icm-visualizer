@@ -9,6 +9,8 @@ type LayoutInput = readonly string[]
 
 const DEFAULT_WIDTH = 640
 const DEFAULT_HEIGHT = 480
+const MIN_WIDTH = 320
+const MIN_HEIGHT = 360
 
 function getViewportSize(): { width: number; height: number } {
   if (typeof window === "undefined") {
@@ -28,22 +30,31 @@ function getElementSize(element: HTMLElement | null): { width: number; height: n
   return { width: Math.max(0, rect.width), height: Math.max(0, rect.height) }
 }
 
-function useMeasuredSize(
+function resolveSize(width: number, height: number): { width: number; height: number } {
+  return {
+    width: Math.max(MIN_WIDTH, width),
+    height: Math.max(MIN_HEIGHT, height),
+  }
+}
+
+export function useNetworkDimensions(
   containerRef?: RefObject<HTMLElement | null>,
   width?: number,
   height?: number,
+  defaultWidth = DEFAULT_WIDTH,
+  defaultHeight = DEFAULT_HEIGHT,
 ): { width: number; height: number } {
-  const [size, setSize] = useState(getViewportSize)
+  const [size, setSize] = useState(() => resolveSize(defaultWidth, defaultHeight))
 
   useEffect(() => {
     const element = containerRef?.current ?? null
     const update = () => {
       const elementSize = getElementSize(element)
       const viewportSize = getViewportSize()
-      setSize({
-        width: width ?? elementSize?.width ?? viewportSize.width,
-        height: height ?? elementSize?.height ?? viewportSize.height,
-      })
+      setSize(resolveSize(
+        width ?? elementSize?.width ?? viewportSize.width,
+        height ?? elementSize?.height ?? viewportSize.height,
+      ))
     }
 
     update()
@@ -59,11 +70,11 @@ function useMeasuredSize(
       observer?.disconnect()
       window.removeEventListener("resize", update)
     }
-  }, [containerRef, height, width])
+  }, [containerRef, defaultHeight, defaultWidth, height, width])
 
   return {
-    width: width ?? size.width,
-    height: height ?? size.height,
+    width: width === undefined ? size.width : Math.max(MIN_WIDTH, width),
+    height: height === undefined ? size.height : Math.max(MIN_HEIGHT, height),
   }
 }
 
@@ -85,7 +96,7 @@ export function useNetworkLayout(
   const chainIds: LayoutInput = objectOptions?.chainIds ?? (chainIdsOrOptions as LayoutInput)
   const layoutOptions: Omit<NetworkLayoutOptions, "enabledChainIds"> = objectOptions ?? options
   const enabled = objectOptions?.enabledChainIds ?? enabledChainIds
-  const dimensions = useMeasuredSize(layoutOptions.containerRef, layoutOptions.width, layoutOptions.height)
+  const dimensions = useNetworkDimensions(layoutOptions.containerRef, layoutOptions.width, layoutOptions.height)
   const enabledSet = enabled ? new Set(enabled) : null
   const visibleChainIds = chainIds.filter((chainId) => !enabledSet || enabledSet.has(chainId))
 
