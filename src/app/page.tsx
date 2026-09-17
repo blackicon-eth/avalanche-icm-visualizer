@@ -114,7 +114,10 @@ function Visualizer() {
     setChains(enabledChainIds.includes(id) ? enabledChainIds.filter((item) => item !== id) : [...enabledChainIds, id])
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="flex min-h-26 items-center justify-between gap-6 border-b border-border bg-[#080a0d]/86 pl-6 pr-8 py-6">
+      <header
+        className="page-enter flex min-h-26 items-center justify-between gap-6 border-b border-border bg-[#080a0d]/86 pl-6 pr-8 py-6"
+        style={{ "--entry-delay": "40ms" } as React.CSSProperties}
+      >
         <div className="flex items-center gap-4">
           <svg className="h-12 w-12 shrink-0" viewBox="0 0 64 64" role="img" aria-label="Avalanche logo">
             <rect width="64" height="64" rx="14" fill="#0d1014" stroke="#303944" />
@@ -138,7 +141,10 @@ function Visualizer() {
         </div>
       </header>
       <div className="grid min-h-[calc(100vh-104px)] grid-cols-1 lg:grid-cols-[292px_minmax(0,1fr)]">
-        <aside className="border-b border-border bg-[#0a0d11]/62 px-5 py-8 sm:px-6.5 lg:border-b-0 lg:border-r lg:py-10.5">
+        <aside
+          className="page-enter border-b border-border bg-[#0a0d11]/62 px-5 py-8 sm:px-6.5 lg:border-b-0 lg:border-r lg:py-10.5"
+          style={{ "--entry-delay": "130ms" } as React.CSSProperties}
+        >
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.2em] text-[#6e7a88]">
@@ -197,19 +203,20 @@ function Visualizer() {
             </small>
           </div>
         </aside>
-        <section className="min-w-0 px-10">
+        <section className="page-enter min-w-0 px-10" style={{ "--entry-delay": "190ms" } as React.CSSProperties}>
           <NetworkCanvas
             chains={allChains}
             enabledChainIds={enabledChainIds}
             messages={visibleMessages}
             batches={visibleBatches}
+            loading={isLoading}
             paused={paused}
             onPausedChange={setPaused}
             selectedMessageId={selectedMessage?.id}
             onMessageClick={(message) => updateParams({ message: message.id })}
             className="mt-9 h-[115vw] min-h-110 max-h-175 shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:h-[62vw]"
           />
-          <div className="w-full my-5">
+          <div className="page-enter w-full my-5" style={{ "--entry-delay": "360ms" } as React.CSSProperties}>
             <div className="flex items-end justify-between gap-4">
               <h2 className="mt-2.5 text-xl font-bold tracking-[-.03em] sm:text-2xl">Recent messages</h2>
               <span className="font-mono text-xs text-[#687481]">
@@ -233,7 +240,7 @@ function Visualizer() {
             />
             {isLoading ? (
               <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-[#303944] px-6 py-14 text-sm text-[#84909c]">
-                <span className="h-[15px] w-[15px] animate-spin rounded-full border-2 border-[#39434e] border-t-[#e84142]" />
+                <span className="loading-spinner h-[15px] w-[15px] rounded-full border-2 border-[#39434e] border-t-[#e84142]" />
                 Loading network events...
               </div>
             ) : isError ? (
@@ -318,7 +325,13 @@ export default function Home() {
       <Suspense
         fallback={
           <div className="grid min-h-screen place-items-center bg-background font-mono text-xs uppercase tracking-[.12em] text-[#7f8995]">
-            Loading network observatory...
+            <div className="flex items-center gap-3" role="status" aria-live="polite">
+              <span
+                className="loading-spinner h-4 w-4 rounded-full border-2 border-[#39434e] border-t-[#e84142]"
+                aria-hidden="true"
+              />
+              Loading network observatory...
+            </div>
           </div>
         }
       >

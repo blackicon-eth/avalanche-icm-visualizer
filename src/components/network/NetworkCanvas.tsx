@@ -24,6 +24,7 @@ export type NetworkCanvasProps = {
   width?: number
   height?: number
   paused?: boolean
+  loading?: boolean
   maxAnimatedMessages?: number
   onMessageClick?: (message: ICMMessage) => void
   onChainClick?: (chain: Chain) => void
@@ -49,6 +50,7 @@ export function NetworkCanvas({
   width,
   height,
   paused,
+  loading = false,
   maxAnimatedMessages = DEFAULT_ANIMATION_CAP,
   onMessageClick,
   onChainClick,
@@ -101,11 +103,11 @@ export function NetworkCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative min-h-[440px] w-full overflow-hidden rounded-xl border border-[#242b34] bg-[#0d1014] ${className ?? ""}`}
+      className={`network-map-enter relative min-h-[440px] w-full overflow-hidden rounded-xl border border-[#242b34] bg-[#0d1014] ${className ?? ""}`}
     >
       <svg
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-        className="h-full min-h-[440px] w-full"
+        className={`network-map-svg h-full min-h-[440px] w-full ${loading ? "opacity-45" : "opacity-100"}`}
         role="img"
         aria-labelledby="network-title network-description"
       >
@@ -202,6 +204,20 @@ export function NetworkCanvas({
           })}
         </g>
       </svg>
+      <div
+        className={`network-loading absolute inset-0 z-10 grid place-items-center bg-[#0d1014]/72 backdrop-blur-[2px] ${loading ? "" : "is-hidden"}`}
+        role="status"
+        aria-live="polite"
+        aria-hidden={!loading}
+      >
+        <div className="flex items-center gap-3 rounded-lg border border-[#303944] bg-[#11161c]/90 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#9aa5b1] shadow-2xl">
+          <span
+            className="loading-spinner h-4 w-4 rounded-full border-2 border-[#39434e] border-t-[#e84142]"
+            aria-hidden="true"
+          />
+          Loading messages
+        </div>
+      </div>
       <div className="pointer-events-none absolute left-6 top-6 font-mono text-xs uppercase tracking-[0.22em] text-[#687382]">
         Network Map
       </div>

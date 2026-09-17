@@ -1,6 +1,7 @@
 "use client"
 
 import type { MouseEventHandler } from "react"
+import { motion } from "motion/react"
 
 import type { Chain } from "@/types/chain"
 import type { ChainPosition } from "@/types/visualization"
@@ -26,12 +27,14 @@ export function ChainNode({
   const label = `${chain.name}${messageCount ? `, ${messageCount} messages` : ""}`
 
   return (
-    <g
+    <motion.g
       className="cursor-pointer outline-none"
       role="button"
       tabIndex={0}
       aria-label={label}
-      transform={`translate(${position.x} ${position.y})`}
+      initial={false}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: "spring", stiffness: 150, damping: 24, mass: 0.7 }}
       onClick={onClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -54,6 +57,6 @@ export function ChainNode({
       <text y={64} textAnchor="middle" fill="#aeb8c5" fontSize="12">
         {chain.name}
       </text>
-    </g>
+    </motion.g>
   )
 }
