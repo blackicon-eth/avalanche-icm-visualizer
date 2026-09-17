@@ -13,7 +13,7 @@ import { MessageList } from "@/components/messages/MessageList"
 import { MessageFilters, type MessageFilterValues } from "@/components/ui/MessageFilters"
 import type { AnimationSpeed } from "@/hooks/useAnimationClock"
 import { groupMessages, useMessages, type DataMode } from "@/hooks/useMessages"
-import type { Chain, ICMMessage } from "@/types"
+import type { Chain } from "@/types"
 
 const queryClient = new QueryClient()
 const defaultFilters: MessageFilterValues = { protocol: "all", status: "all", time: "all", source: "all", destination: "all" }
@@ -24,7 +24,6 @@ function Visualizer() {
   const params = useSearchParams()
   const [paused, setPaused] = useState(false)
   const [speed, setSpeed] = useState<AnimationSpeed>(1)
-  const [selectedMessage, setSelectedMessage] = useState<ICMMessage | null>(null)
   const [customChains, setCustomChains] = useState<Chain[]>(() => readCustomChains())
   const [addChainOpen, setAddChainOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
@@ -56,7 +55,7 @@ function Visualizer() {
       (filters.time === "all" || (filters.time === "hour" ? age <= 3600000 : filters.time === "day" ? age <= 86400000 : age <= 604800000))
   })
   const visibleBatches = useMemo(() => groupMessages(visibleMessages), [visibleMessages])
-  const visibleSelectedMessage = selectedMessage && visibleMessages.some((message) => message.id === selectedMessage.id) ? selectedMessage : null
+  const selectedMessage = messages.find((message) => message.id === params.get("message")) ?? null
   const updateParams = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params.toString())
     Object.entries(updates).forEach(([key, value]) => value && value !== "all" ? next.set(key, value) : next.delete(key))
@@ -87,12 +86,12 @@ function Visualizer() {
         <div className="rail-foot"><span className="eyebrow">STREAM HEALTH</span><strong>{isError ? "Connection issue" : mode === "live" ? "Awaiting RPC traffic" : "Polling every 5s"}</strong><small>{mode === "live" ? "Live provider is read-only and uses configured RPC endpoints." : "Mock provider generates new observed events."}</small></div>
       </aside>
       <section className="network-column"><div className="section-intro"><div><p className="eyebrow">NETWORK TOPOLOGY</p><h2>Messages in motion</h2><p>Independent Avalanche L1s, connected by observed ICM traffic.</p></div><div className="telemetry"><strong>{visibleMessages.length.toString().padStart(2, "0")}</strong><span>visible events</span></div></div>
-           <NetworkCanvas chains={allChains} enabledChainIds={enabledChainIds} messages={visibleMessages} batches={visibleBatches} paused={paused} speed={speed} onPausedChange={setPaused} onSpeedChange={setSpeed} selectedMessageId={visibleSelectedMessage?.id} onMessageClick={setSelectedMessage} className="network-hero" />
+            <NetworkCanvas chains={allChains} enabledChainIds={enabledChainIds} messages={visibleMessages} batches={visibleBatches} paused={paused} speed={speed} onPausedChange={setPaused} onSpeedChange={setSpeed} selectedMessageId={selectedMessage?.id} onMessageClick={(message) => updateParams({ message: message.id })} className="network-hero" />
          <div className="network-caption"><NetworkLegend /><span>{visibleBatches.length} active routes · click a particle to inspect the evidence trail</span></div>
-         <div className="activity-section"><div className="activity-heading"><div><p className="eyebrow">03 / ACTIVITY LOG</p><h2>Recent messages</h2></div><span>{visibleMessages.length} of {messages.length} events</span></div><MessageFilters value={filters} onChange={(next) => updateParams({ protocol: next.protocol, status: next.status, time: next.time, source: next.source, destination: next.destination })} chains={allChains} className="filter-bar" />{isLoading ? <div className="state-panel"><span className="loader" />Loading network events…</div> : isError ? <div className="state-panel"><strong>Unable to load ICM data.</strong><button type="button" onClick={() => refetch()}>Retry connection</button></div> : !visibleMessages.length ? <div className="state-panel"><strong>No messages match your current filters.</strong><span>Try enabling another chain or removing a filter.</span></div> : <MessageList messages={visibleMessages} chains={allChains} selectedMessageId={selectedMessage?.id} onSelectMessage={setSelectedMessage} />}</div>
+         <div className="activity-section"><div className="activity-heading"><div><p className="eyebrow">03 / ACTIVITY LOG</p><h2>Recent messages</h2></div><span>{visibleMessages.length} of {messages.length} events</span></div><MessageFilters value={filters} onChange={(next) => updateParams({ protocol: next.protocol, status: next.status, time: next.time, source: next.source, destination: next.destination })} chains={allChains} className="filter-bar" />{isLoading ? <div className="state-panel"><span className="loader" />Loading network events…</div> : isError ? <div className="state-panel"><strong>Unable to load ICM data.</strong><button type="button" onClick={() => refetch()}>Retry connection</button></div> : !visibleMessages.length ? <div className="state-panel"><strong>No messages match your current filters.</strong><span>Try enabling another chain or removing a filter.</span></div> : <MessageList messages={visibleMessages} chains={allChains} selectedMessageId={selectedMessage?.id} onSelectMessage={(message) => updateParams({ message: message.id })} />}</div>
       </section>
     </div>
-      <MessageDetails message={visibleSelectedMessage} chains={allChains} onClose={() => setSelectedMessage(null)} />
+      <MessageDetails message={selectedMessage} chains={allChains} onClose={() => updateParams({ message: undefined })} />
   </main>
 }
 
