@@ -81,7 +81,7 @@ function Visualizer() {
     const age = now - (message.emittedAt ?? 0)
     return (
       enabledChainIds.includes(message.source.chainId) &&
-      enabledChainIds.includes(message.destination.chainId) &&
+      (message.destination.chainId === "unknown" || enabledChainIds.includes(message.destination.chainId)) &&
       (filters.protocol === "all" || message.protocol === filters.protocol) &&
       (filters.status === "all" || message.status === filters.status) &&
       (filters.source === "all" || message.source.chainId === filters.source) &&

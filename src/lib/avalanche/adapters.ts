@@ -49,10 +49,10 @@ export class AvalancheICMDataProvider implements ICMDataProvider {
       )
     }
     const enrichedMessages = await this.attachDeliveryEvidence(messages)
-    return enrichedMessages
+    const recentMessages = enrichedMessages
       .filter((message) => params.since === undefined || (message.emittedAt ?? 0) >= normalizeTimestamp(params.since))
-      .sort((a, b) => ((b.source.blockNumber ?? BigInt(0)) > (a.source.blockNumber ?? BigInt(0)) ? 1 : -1))
-      .slice(0, Math.max(0, params.limit ?? 100))
+      .sort((a, b) => (b.emittedAt ?? 0) - (a.emittedAt ?? 0))
+    return selectRecentMessages(recentMessages, Math.max(0, params.limit ?? 100))
   }
 
   private async attachDeliveryEvidence(messages: ICMMessage[]) {
@@ -247,4 +247,31 @@ function normalizeTimestamp(timestamp: number) {
 
 function messageId(chainId: string, log: Log) {
   return `${chainId}:${log.transactionHash ?? "unknown"}:${log.logIndex ?? 0}`
+}
+
+function selectRecentMessages(messages: ICMMessage[], limit: number) {
+  if (messages.length <= limit) return messages
+
+  const bySource = new Map<string, ICMMessage[]>()
+  for (const message of messages) {
+    const sourceMessages = bySource.get(message.source.chainId) ?? []
+    sourceMessages.push(message)
+    bySource.set(message.source.chainId, sourceMessages)
+  }
+
+  const selected: ICMMessage[] = []
+  const sources = [...bySource.values()]
+  for (let index = 0; selected.length < limit; index += 1) {
+    let added = false
+    for (const sourceMessages of sources) {
+      const message = sourceMessages[index]
+      if (!message) continue
+      selected.push(message)
+      added = true
+      if (selected.length === limit) break
+    }
+    if (!added) break
+  }
+
+  return selected.sort((a, b) => (b.emittedAt ?? 0) - (a.emittedAt ?? 0))
 }
