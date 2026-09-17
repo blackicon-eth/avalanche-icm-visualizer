@@ -82,6 +82,20 @@
   animation: loading-spin 850ms linear infinite;
 }
 
+.desktop-only-gate {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .desktop-only-gate {
+    display: grid;
+  }
+
+  .desktop-visualizer {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
   .network-map-enter {
