@@ -2,6 +2,10 @@
 
 A focused, read-only visualization of Interchain Messaging traffic between Avalanche L1s.
 
+![Avalanche ICM Visualizer screenshot](public/screenshot.png)
+
+Add the project screenshot at `public/screenshot.png` to display it here.
+
 ## Run locally
 
 ```bash
@@ -10,10 +14,6 @@ pnpm dev
 ```
 
 Open `http://localhost:3000`. The application reads live Avalanche data from the configured RPC endpoints.
-
-## Configuration
-
-Copy `.env.example` to `.env.local` when a fallback RPC is needed. Chain-specific endpoints in `src/data/chains.ts` take precedence over `AVALANCHE_RPC_URL`.
 
 The application uses public, read-only RPC endpoints directly from the browser. RPC providers may enforce rate limits, CORS rules, or availability policies; use endpoints you are authorized to access for production deployments.
 
