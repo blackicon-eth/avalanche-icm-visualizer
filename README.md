@@ -9,11 +9,11 @@ pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000`. The default mock provider works without RPC configuration.
+Open `http://localhost:3000`. The application reads live Avalanche data from the configured RPC endpoints.
 
 ## Data modes
 
-Mock traffic is the default and is suitable for development. Use the mode control to try the live provider. Live traffic requires configured RPC endpoints and protocol contract addresses on the supplied chain configuration; the UI reports unavailable or failed live sources without fabricating traffic.
+Live traffic requires configured RPC endpoints and protocol contract addresses on the supplied chain configuration; the UI reports unavailable or failed live sources without fabricating traffic.
 
 ## Verification
 

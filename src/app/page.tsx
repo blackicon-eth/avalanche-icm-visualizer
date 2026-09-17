@@ -12,7 +12,7 @@ import { MessageDetails } from "@/components/messages/MessageDetails"
 import { MessageList } from "@/components/messages/MessageList"
 import { MessageFilters, type MessageFilterValues } from "@/components/ui/MessageFilters"
 import type { AnimationSpeed } from "@/hooks/useAnimationClock"
-import { groupMessages, useMessages, type DataMode } from "@/hooks/useMessages"
+import { groupMessages, useMessages } from "@/hooks/useMessages"
 import type { Chain } from "@/types"
 
 const queryClient = new QueryClient()
@@ -42,7 +42,6 @@ function Visualizer() {
   const [customChains, setCustomChains] = useState<Chain[]>(() => readCustomChains())
   const [addChainOpen, setAddChainOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
-  const mode: DataMode = params.get("mode") === "live" ? "live" : "mock"
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 5000)
     return () => clearInterval(interval)
@@ -63,7 +62,7 @@ function Visualizer() {
     source: params.get("source") || defaultFilters.source,
     destination: params.get("destination") || defaultFilters.destination,
   }
-  const { messages, isLoading, isError, refetch } = useMessages({ mode, chainIds: enabledChainIds, paused, chains: allChains })
+  const { messages, isLoading, isError, refetch } = useMessages({ chainIds: enabledChainIds, paused, chains: allChains })
   const visibleMessages = messages.filter((message) => {
     const age = now - (message.emittedAt ?? 0)
     return enabledChainIds.includes(message.source.chainId) && enabledChainIds.includes(message.destination.chainId) &&
@@ -90,7 +89,7 @@ function Visualizer() {
   }
 
   return <main className="min-h-screen bg-background text-foreground">
-    <header className="site-header"><div><p className="eyebrow">AVALANCHE / INTERCHAIN MESSAGING</p><h1>ICM <span>Visualizer</span></h1></div><div className="header-meta"><span className={`status-light ${paused ? "is-paused" : ""}`} /><span>{paused ? "PAUSED" : mode === "live" ? "LIVE PROVIDER" : "MOCK STREAM"}</span><button type="button" className="mode-button" onClick={() => updateParams({ mode: mode === "mock" ? "live" : "mock" })}>{mode === "mock" ? "Switch to live" : "Use mock data"}</button></div></header>
+     <header className="site-header"><div><p className="eyebrow">AVALANCHE / INTERCHAIN MESSAGING</p><h1>ICM <span>Visualizer</span></h1></div><div className="header-meta"><span className={`status-light ${paused ? "is-paused" : ""}`} /><span>{paused ? "PAUSED" : "LIVE PROVIDER"}</span></div></header>
     <div className="workspace">
       <aside className="control-rail">
          <div className="rail-heading"><div><p className="eyebrow">01 / NETWORKS</p><h2>Active chains</h2></div><span className="count-badge">{enabledChainIds.length}/{allChains.length}</span></div>
@@ -102,7 +101,7 @@ function Visualizer() {
         <button className="pause-button" type="button" onClick={() => setPaused((value) => !value)}><span>{paused ? "▶" : "Ⅱ"}</span>{paused ? "Resume network" : "Pause network"}</button>
         <div className="speed-row"><span>Playback speed</span><div>{([0.5, 1, 2, 4] as AnimationSpeed[]).map((value) => <button key={value} type="button" className={speed === value ? "selected" : ""} onClick={() => setSpeed(value)}>{value}×</button>)}</div></div>
         <div className="rail-divider" />
-        <div className="rail-foot"><span className="eyebrow">STREAM HEALTH</span><strong>{isError ? "Connection issue" : mode === "live" ? "Awaiting RPC traffic" : "Polling every 5s"}</strong><small>{mode === "live" ? "Live provider is read-only and uses configured RPC endpoints." : "Mock provider generates new observed events."}</small></div>
+         <div className="rail-foot"><span className="eyebrow">STREAM HEALTH</span><strong>{isError ? "Connection issue" : "Awaiting RPC traffic"}</strong><small>Live provider is read-only and uses configured RPC endpoints.</small></div>
       </aside>
       <section className="network-column"><div className="section-intro"><div><p className="eyebrow">NETWORK TOPOLOGY</p><h2>Messages in motion</h2><p>Independent Avalanche L1s, connected by observed ICM traffic.</p></div><div className="telemetry"><strong>{visibleMessages.length.toString().padStart(2, "0")}</strong><span>visible events</span></div></div>
             <NetworkCanvas chains={allChains} enabledChainIds={enabledChainIds} messages={visibleMessages} batches={visibleBatches} paused={paused} speed={speed} onPausedChange={setPaused} onSpeedChange={setSpeed} selectedMessageId={selectedMessage?.id} onMessageClick={(message) => updateParams({ message: message.id })} className="network-hero" />

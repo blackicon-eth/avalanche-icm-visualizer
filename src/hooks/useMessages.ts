@@ -3,16 +3,11 @@
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 import { chains } from "@/data/chains"
-import { createMockMessage } from "@/data/mock"
-import { MockICMDataProvider } from "@/data/mock-provider"
 import { AvalancheICMDataProvider } from "@/lib/avalanche/adapters"
 import type { ICMDataProvider } from "@/lib/providers"
 import type { ICMMessage, MessageBatch } from "@/types"
 import type { Chain } from "@/types"
 
-export type DataMode = "mock" | "live"
-
-const mockProvider = new MockICMDataProvider()
 const MESSAGE_RETENTION_LIMIT = 100
 const retainedMessagesByKey = new Map<string, Map<string, ICMMessage>>()
 
@@ -52,22 +47,14 @@ export function groupMessages(messages: readonly ICMMessage[], windowMs = 1000):
   return [...batchesByRoute.values()].flat().sort((a, b) => a.startedAt - b.startedAt)
 }
 
-export function useMessages({ mode = "mock", chainIds, paused = false, chains: availableChains = chains }: { mode?: DataMode; chainIds?: string[]; paused?: boolean; chains?: Chain[] } = {}) {
-  const provider = useMemo<ICMDataProvider>(() => mode === "live" ? new AvalancheICMDataProvider({ chains: availableChains }) : mockProvider, [availableChains, mode])
-  const queryKey = `${mode}:${chainIds?.join(",") ?? "all"}:${availableChains.map((chain) => chain.id).join(",")}`
+export function useMessages({ chainIds, paused = false, chains: availableChains = chains }: { chainIds?: string[]; paused?: boolean; chains?: Chain[] } = {}) {
+  const provider = useMemo<ICMDataProvider>(() => new AvalancheICMDataProvider({ chains: availableChains }), [availableChains])
+  const queryKey = `${chainIds?.join(",") ?? "all"}:${availableChains.map((chain) => chain.id).join(",")}`
   const query = useQuery({
-    queryKey: ["icm-messages", mode, chainIds?.join(",") ?? "all", availableChains.map((chain) => chain.id).join(",")],
+    queryKey: ["icm-messages", chainIds?.join(",") ?? "all", availableChains.map((chain) => chain.id).join(",")],
     queryFn: async () => {
       const messages = await provider.getRecentMessages({ chainIds, limit: 100, since: Date.now() - 7 * 24 * 60 * 60 * 1000 })
-      let nextMessages = messages
-      if (mode === "mock" && !paused) {
-        const generated = createMockMessage()
-        const matchesChains =
-          !chainIds?.length ||
-          (chainIds.includes(generated.source.chainId) && chainIds.includes(generated.destination.chainId))
-        nextMessages = matchesChains ? [...messages, generated] : messages
-      }
-      return retainMessages(queryKey, nextMessages)
+      return retainMessages(queryKey, messages)
     },
     refetchInterval: paused ? false : 5000,
     refetchIntervalInBackground: false,
